@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MessageSquare, BookOpen, Briefcase } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 import './HomePage.css';
 import {
@@ -16,12 +16,16 @@ import {
   FaFileDownload,
   FaPencilAlt,
   FaSignOutAlt,
+  FaFileAlt,
+  FaTools,
+  FaPlusSquare,
+  FaUserTag,
 } from 'react-icons/fa';
-
 
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase/firebaseConfig';
-import { UserService } from '../firebase/src/firebaseServices';
+import { UserService, UserData } from '../firebase/src/firebaseServices';
+
 
 const cards = [
   {
@@ -60,6 +64,7 @@ function HomePage() {
   const [user] = useAuthState(auth);
   const [userData, setUserData] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -71,6 +76,27 @@ function HomePage() {
     fetchUserData();
   }, [user]);
 
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user) {
+        const data = await UserService.getUserData(user.uid);
+        setUserData(data);
+        // Sync stats whenever they visit home
+        await UserService.updateUserStats(user.uid);
+      }
+    };
+    fetchUserData();
+  }, [user]);
+
+  const displayName = userData?.firstName && userData?.lastName
+    ? `${userData.firstName} ${userData.lastName}`
+    : userData?.firstName || 'User';
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    navigate("/signin");
+  };
   return (
     <div className="homepage">
      
@@ -80,7 +106,7 @@ function HomePage() {
    <NavLink
       to="/homepage"
     >
-        <img src="src/assets/img/logo2.png" className="logo2" alt="Logo" />
+        <img src="src\assets\img\logo2.png" className="logo2" alt="Logo" />
 
     </NavLink>
 </div>
@@ -115,56 +141,48 @@ function HomePage() {
 </ul>
 
 
-        <div className="profile-container">
-            <button
-              className="profile-btn"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-            >
-              {userData?.photoURL ? (
-                <img src={userData.photoURL} alt="Profile" className="profile-img" />
-              ) : (
-                <FaUser size={24} color="#fff" />
-              )}
-            </button>
+<div className="profile-container">
+  <button className="profile-btn" onClick={() => setDropdownOpen(!dropdownOpen)}>
+            {userData?.photoURL ? (
+              <img src={userData.photoURL} alt="Profile" className="profile-img" />
+            ) : (
+              <FaUser size={24} color="#fff" />
+            )}
+          </button>
 
-            {dropdownOpen && (
-              <div className="profile-dropdown">
-                <div className="profile-header">
-                  {userData?.photoURL ? (
-                    <img src={userData.photoURL} alt="Profile" className="profile-pic" />
-                  ) : (
-                    <FaUser size={40} color="#ffffffff" />
-                  )}
-                  <h4>Welcome, {userData?.displayName || user?.email?.split('@')[0] || 'User'}!</h4>
-                </div>
-                <ul>
-                  <li>
-                    <FaBriefcase /> Applied Jobs: <span>{userData?.appliedJobs || 0}</span>
-                  </li>
-                  <li>
-                    <FaBook /> Courses Taken: <span>{userData?.coursesEnrolled || 0}</span>
-                  </li>
-                  <li>
-                    <FaPencilAlt /> Exercises Done: <span>{userData?.exercisesCompleted || 0}</span>
-                  </li>
-                  <li>
-                    <FaFileDownload /> Notes Downloaded: <span>{userData?.downloads || 0}</span>
-                  </li>
-                  <li>Shared Notes: <span>{userData?.sharedNotes || 0}</span></li>
-                  <li>
-                    CV Status: <span>{userData?.cvUploaded ? 'Uploaded' : 'Not Uploaded'}</span>
-                  </li>
-                </ul>
-                <div className="profile-actions">
-                  <Link to="/profile" className="profile-link">
-                    View Profile
-                  </Link>
-                  <button className="logout-btn" onClick={() => auth.signOut()}>
-                    <FaSignOutAlt /> Sign Out
-                  </button>
+          {dropdownOpen && (
+            <div className="profile-dropdown">
+              <div className="profile-header">
+                {userData?.photoURL ? (
+                  <img src={userData.photoURL} alt="Profile" className="profile-pic" />
+                ) : (
+                  <FaUser size={40} color="#fff" />
+                )}
+                <div className="user-dropdown-info">
+                  <h4>Welcome, {displayName}!</h4>
+                  <div className="role-badge">
+                  </div>
                 </div>
               </div>
-            )}
+
+               <ul className="dropdown-stats">
+                                  <li><FaUserTag />Role: <span>{userData?.role || 'Member'}</span></li>
+                                  <li><FaTools /> Skills: <span>{userData?.skills?.length || 0}</span></li>
+                                  <li><FaBriefcase /> Applied Jobs: <span>{userData?.appliedJobs || 0}</span></li>
+                                  <li><FaPlusSquare /> Jobs Added: <span>{userData?.jobsPosted || 0}</span></li>
+                                  <li><FaFileAlt /> Shared Notes: <span>{userData?.sharedNotes || 0}</span></li>
+                                </ul>
+
+              <div className="profile-actions">
+                <Link to="/profile" className="profile-link" onClick={() => setDropdownOpen(false)}>
+                  View Profile
+                </Link>
+                <button className="logout-btn" onClick={handleLogout}>
+                  <FaSignOutAlt /> Sign Out
+                </button>
+              </div>
+            </div>
+          )}
           </div>
   <div className="divider2"></div>
 
@@ -187,28 +205,28 @@ function HomePage() {
         <span className="highlight">Study Smarter</span> or Find Your<span className="highlight2"> Next Job?</span>
       </h1>
       <h3 className="head3">
-        Choose what fits you best in a smart,
-        <br /> simple and personal way.
+Our Primary Objective is to
+<br /> Connect You with Our Target Goal:
       </h3>
 <div className="stats-container">
   <div className="stat-item">
-    <div className="stat-value">15,2K</div>
-    <div className="stat-label">courses</div>
+    <div className="stat-value">1.5M</div>
+    <div className="stat-label">Courses</div>
   </div>
   <div className="divider"></div>
   <div className="stat-item">
-    <div className="stat-value">4,5K</div> 
-    <div className="stat-label">jobs</div>
+    <div className="stat-value">500K</div> 
+    <div className="stat-label">Jobs</div>
   </div>
   <div className="divider"></div>
   <div className="stat-item">
     <div className="stat-value">
      
-      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
       </svg>
     </div>
-    <div className="stat-label">chatbot</div>
+    <div className="stat-label">Generative AI</div>
   </div>
 </div>
       
@@ -310,11 +328,8 @@ function HomePage() {
       {/* Footer */}
       <div className="footer-container">
         <div className="subscribe-section">
-          <h2>Subscribe to Get Special Price</h2>
-          <div className="subscribe-input">
-            <input type="email" placeholder="Email address" />
-            <button>Subscribe</button>
-          </div>
+          <h2>Build Skills. Discover Opportunities.</h2>
+        
         </div>
 
         <div className="footer-bottom">

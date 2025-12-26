@@ -1,5 +1,3 @@
-// src/pages/CoursesData.tsx
-
 import { FaPaintBrush, FaShieldAlt, FaChartLine, FaCode, FaMobileAlt } from 'react-icons/fa';
 import { Scroll, Languages, FlaskConical } from 'lucide-react';
 
@@ -31,6 +29,7 @@ interface Course {
   thumbnail: string;
   instructor: string;
   rating: number;
+  category: string;
   students: number;
   duration: string;
   level: string;
@@ -96,6 +95,72 @@ export interface SectionType {
   sharedNotes: SharedNote[];
 }
 
+export const SECTION: SectionType[] = [
+  {
+    id: 'design', // Matches <option value="design">
+    title: 'Graphic Design',
+    icon: <FaPaintBrush />,
+    courses: [], 
+    exercises: [],
+    sharedNotes: []
+  },
+  {
+    id: 'CyberSecurity', // Matches <option value="CyberSecurity">
+    title: 'Cyber Security',
+    icon: <FaShieldAlt />,
+    courses: [],
+    exercises: [],
+    sharedNotes: []
+  },
+  {
+    id: 'Web-Development', // Matches <option value="Web-Development">
+    title: 'Web Development',
+    icon: <FaCode />,
+    courses: [],
+    exercises: [],
+    sharedNotes: []
+  },
+  {
+    id: 'languages',
+    title: 'Languages',
+    icon: <Languages />,
+    courses: [],
+    exercises: [],
+    sharedNotes: []
+  },
+  {
+    id: 'History',
+    title: 'History',
+    icon: <Scroll />,
+    courses: [],
+    exercises: [],
+    sharedNotes: []
+  },
+  {
+    id: 'Finance',
+    title: 'Finance',
+    icon: <FaChartLine />,
+    courses: [],
+    exercises: [],
+    sharedNotes: []
+  },
+  {
+    id: 'mobile-development',
+    title: 'Mobile Development',
+    icon: <FaMobileAlt />,
+    courses: [],
+    exercises: [],
+    sharedNotes: []
+  },
+  {
+    id: 'Chemistry',
+    title: 'Chemistry',
+    icon: <FlaskConical />,
+    courses: [],
+    exercises: [],
+    sharedNotes: []
+  }
+];
 
 export const SECTIONS = [
   {
@@ -751,8 +816,8 @@ export const SECTIONS = [
       },    { 
 
         id: 5, 
-        title: 'Learn Adobe Photoshop and Poster Design', 
-        description: 'Focused on mastering Photoshop and crafting effective poster design, taking you from beginner to pro. Transition from a beginner to a pro in poster design, the key is mastering Adobe Photoshop, focusing on tools like layers, masks, blending modes, and smart objects for non-destructive editing and sophisticated visual effects. Begin by understanding foundational design principles—hierarchy, typography, color theory, and composition—and then apply them practically within Photoshop to create compelling layouts. Consistent practice in image manipulation.',
+        title: 'Adobe Photoshop and Poster Design', 
+        description: 'Focused on mastering Photoshop and crafting effective poster design, taking you from beginner to pro.',
         thumbnail: 'https://i.ytimg.com/vi/3n_tWKBZynk/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBqIGP9e3E227NhRiTrZGf0wuKIYw',
         instructor: 'Intellipaat CCSP',
         rating: 4.5,
@@ -5723,7 +5788,7 @@ lessons: [
   { id: 14, title: 'The Verb "Wohnen" (To Live)', duration: '2:10:17', videoUrl: 'https://youtu.be/0p4RCJ8P5ko?t=7817', completed: false, description: '' },
   { id: 15, title: 'Stating Your Age', duration: '2:15:40', videoUrl: 'https://youtu.be/0p4RCJ8P5ko?t=8140', completed: false, description: '' },
   { id: 16, title: 'Personal Information: Gender & Marital Status', duration: '2:26:00', videoUrl: 'https://youtu.be/0p4RCJ8P5ko?t=8760', completed: false, description: '' },
-  { id: 17, title: 'Telephone Numbers', duration: '2:37:37', videoUrl: 'https://youtu.be/0p4RCJ8P5ko?t=9457', completed: false, description: '' },
+  { id: 17, title: 'Tele Numbers', duration: '2:37:37', videoUrl: 'https://youtu.be/0p4RCJ8P5ko?t=9457', completed: false, description: '' },
   { id: 18, title: 'German Question Words (W-Questions)', duration: '2:48:40', videoUrl: 'https://youtu.be/0p4RCJ8P5ko?t=10120', completed: false, description: '' },
   { id: 19, title: 'Describing Where You Live', duration: '2:54:51', videoUrl: 'https://youtu.be/0p4RCJ8P5ko?t=10791', completed: false, description: '' },
   { id: 20, title: 'Countries & Nationalities', duration: '3:10:25', videoUrl: 'https://youtu.be/0p4RCJ8P5ko?t=11425', completed: false, description: '' },
@@ -5799,7 +5864,7 @@ lessons: [
   { id: 1, title: 'How to Introduce Yourself', duration: '00:00:13', videoUrl: 'https://youtu.be/Sk6YQynZ1h8?t=13', completed: false, description: '' },
   { id: 2, title: "How to Say Where You're From", duration: '00:02:44', videoUrl: 'https://youtu.be/Sk6YQynZ1h8?t=164', completed: false, description: '' },
   { id: 3, title: 'How to Talk About Your Occupation', duration: '00:06:11', videoUrl: 'https://youtu.be/Sk6YQynZ1h8?t=371', completed: false, description: '' },
-  { id: 4, title: 'How to Give Your Phone Number', duration: '00:10:53', videoUrl: 'https://youtu.be/Sk6YQynZ1h8?t=653', completed: false, description: '' },
+  { id: 4, title: 'How to Give Your  Number', duration: '00:10:53', videoUrl: 'https://youtu.be/Sk6YQynZ1h8?t=653', completed: false, description: '' },
   { id: 5, title: 'How to Talk About Your Parents and Siblings', duration: '00:13:48', videoUrl: 'https://youtu.be/Sk6YQynZ1h8?t=828', completed: false, description: '' },
   { id: 6, title: 'How to Talk About Your Spouse and Children', duration: '00:18:00', videoUrl: 'https://youtu.be/Sk6YQynZ1h8?t=1080', completed: false, description: '' },
   { id: 7, title: 'How to Use Basic Greetings', duration: '00:21:32', videoUrl: 'https://youtu.be/Sk6YQynZ1h8?t=1292', completed: false, description: '' },

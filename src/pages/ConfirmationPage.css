@@ -1,488 +1,433 @@
+:root {
+  /* Professional Palette */
+  --color-primary: #2563eb;       /* Royal Blue */
+  --color-primary-light: #eff6ff;
+  --color-success: #16a34a;       /* Green */
+  --color-success-light: #f0fdf4;
+  --color-text-main: #1e293b;     /* Slate 800 */
+  --color-text-muted: #64748b;    /* Slate 500 */
+  --color-border: #e2e8f0;        /* Slate 200 */
+  --color-bg-page: #f8fafc;       /* Slate 50 */
+  --color-bg-card: #ffffff;
+  
+}
+
 
 .confirmation-page {
   min-height: 100vh;
-  background: #ffffff;
+  background-color: var(--color-bg-page);
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 60px 20px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--color-text-main);
 }
 
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.confirmation-container {
+  background: var(--color-bg-card);
+  width: 100%;
+  max-width: 900px;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-float);
+  padding: 50px;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* =========================================
+   3. Header Section (Success State)
+   ========================================= */
 .success-icon {
-  position: relative;
-  left: 130px;
-  top: 20px;
-  color: #10b981;
-  margin-bottom: -70px;
-  padding-bottom: -50px;
-  font-size: 3rem; /* make icon a bit bigger */
-  animation: checkmark 0.8s ease-in-out;
-}
-
-@keyframes checkmark {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+  color: var(--color-success);
+  margin-bottom: 24px;
+  filter: drop-shadow(0 4px 6px rgba(22, 163, 74, 0.2));
 }
 
 .confirmation-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 20px;
-  text-align: center; /* center the title */
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+  color: var(--color-text-main);
 }
 
 .confirmation-message {
-  font-size: 1.2rem;
-  color: #6b7280;
+  font-size: 1.1rem;
   line-height: 1.6;
-  margin-bottom: 30px;
-  text-align: center; /* center the message */
+  color: var(--color-text-muted);
+  max-width: 650px;
+  margin: 0 auto 30px auto;
 }
 
 .confirmation-message strong {
-  color: #1f2937;
+  color: var(--color-text-main);
   font-weight: 600;
 }
 
+/* Application Badge */
 .application-id {
-  display: flex;
-  justify-content: center;
+  display: inline-flex;
   align-items: center;
-  gap: 15px; /* space between label and ID */
-  border: 2px solid #3a25ff; /* border color */
-  border-radius: 12px;
-  background: #ffffff; /* white background inside */
-  padding: 15px 25px;
-  margin: 40px auto; /* center horizontally */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 1rem;
-  color: #3a25ff;
-  width: fit-content;
-  box-shadow: 0 6px 15px rgba(58, 37, 255, 0.2);
+  gap: 10px;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-family: 'Monaco', 'Consolas', monospace; /* Monospace for ID */
+  font-size: 0.9rem;
+  margin-bottom: 50px;
+  border: 1px solid rgba(37, 99, 235, 0.1);
 }
 
 .application-id-label {
   font-weight: 700;
-  color: #3a25ff;
+  font-family: 'Inter', sans-serif;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  opacity: 0.8;
 }
 
-/* Enhanced Statistics Section */
+/* =========================================
+   4. Stats Dashboard (Grid)
+   ========================================= */
 .stats-section {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  border-radius: 16px;
-  padding: 30px;
-  margin: 30px 0;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 40px;
 }
 
 .stats-title {
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 25px;
   display: flex;
   align-items: center;
   gap: 10px;
-  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: left;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 25px;
+  grid-template-columns: repeat(4, 1fr); /* 4 columns for modern wide look */
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
+/* Individual Stat Card */
 .stat-card {
-  background: white;
-  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
   padding: 20px;
+  border-radius: 12px;
   display: flex;
-  align-items: center;
-  gap: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f1f5f9;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #3b82f6, #10b981);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
-
-.stat-card:hover::before {
-  opacity: 1;
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-subtle);
+  border-color: #cbd5e1;
 }
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.stat-content {
-  flex: 1;
-  text-align: left;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 12px;
 }
 
 .stat-value {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 5px;
-  transition: all 0.3s ease;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
 }
 
 .stat-label {
-  font-size: 0.9rem;
-  color: #6b7280;
+  font-size: 0.85rem;
   font-weight: 500;
+  color: var(--color-text-muted);
 }
 
 .stat-trend {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.8rem;
-  color: #10b981;
-  margin-top: 4px;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 8px;
+  padding: 2px 6px;
+  background: var(--color-success-light);
+  color: var(--color-success);
+  border-radius: 4px;
 }
 
+/* Summary Row */
 .stats-summary {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
   display: flex;
-  flex-direction: column;
-  gap: 15px;
-  border: 1px solid #f1f5f9;
+  justify-content: space-between;
+  background: #f8fafc;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px 30px;
+  font-size: 0.9rem;
 }
 
 .summary-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #f1f5f9;
+  gap: 8px;
 }
 
-.summary-item:last-child {
-  border-bottom: none;
-}
+.summary-label { color: var(--color-text-muted); }
+.summary-value { font-weight: 700; color: var(--color-text-main); }
 
-.summary-label {
-  font-weight: 500;
-  color: #6b7280;
-  font-size: 0.95rem;
-}
-
-.summary-value {
-  font-weight: 700;
-  color: #1f2937;
-  font-size: 1rem;
-}
-
-/* Loading Skeletons */
-.stat-skeleton {
-  width: 80px;
-  height: 28px;
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-  background-size: 200% 100%;
-  border-radius: 4px;
-  animation: shimmer 1.5s infinite;
-}
-
-.inline-skeleton {
-  display: inline-block;
-  width: 60px;
-  height: 16px;
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-  background-size: 200% 100%;
-  border-radius: 4px;
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-/* Existing Styles */
+/* =========================================
+   5. Information Cards (No Form Styling)
+   ========================================= */
 .job-details-card {
-  background: #f8fafc;
+  background: white;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  padding: 25px;
-  margin: 30px 0;
-  border-left: 4px solid #10b981;
+  padding: 30px;
+  margin-bottom: 24px;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Add a colored strip to the left to indicate an "Info Block" */
+.job-details-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-primary);
 }
 
 .job-details-title {
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 15px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
 }
 
+/* Job Title styling */
+.job-details-card h4 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  color: var(--color-text-main);
+}
+
+/* Chips / Tags for Meta Data */
 .job-meta-info {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-  margin-bottom: 15px;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px dashed var(--color-border);
 }
 
 .job-meta-item {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  color: #6b7280;
-  font-size: 0.95rem;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: #f1f5f9;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #475569;
 }
 
 .job-meta-item svg {
-  color: #10b981;
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
 }
 
+/* Tech Stack Display */
 .tech-stack {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #e5e7eb;
+  font-size: 0.95rem;
+  color: var(--color-text-main);
+  background: #f8fafc;
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: inline-block;
+  width: 100%;
 }
 
 .tech-stack-label {
-  color: #374151;
-  font-weight: 600;
-  margin-right: 10px;
+  font-weight: 700;
+  margin-right: 8px;
+  color: var(--color-text-main);
 }
 
+/* Contact Info (Specific Override) */
+/* Targeted via inline style override approach in CSS */
+.job-details-card[style*="background: #f0f9ff"] {
+  background-color: #f0f9ff !important;
+  border-color: #bae6fd !important;
+}
+
+.job-details-card[style*="background: #f0f9ff"]::before {
+  background: #0ea5e9; /* Sky blue strip */
+}
+
+/* Remove default P margins in contact section */
+.job-details-card p {
+  margin: 8px 0;
+  font-size: 1rem;
+  color: #0c4a6e;
+}
+
+/* =========================================
+   6. Next Steps Checklist
+   ========================================= */
 .next-steps {
-  background: #eff6ff;
-  border-radius: 12px;
-  padding: 25px;
-  margin: 30px 0;
-  border-left: 4px solid #3b82f6;
+  text-align: left;
+  margin: 40px 0;
 }
 
 .next-steps-title {
   font-size: 1.2rem;
-  font-weight: 600;
-  color: #1e40af;
-  margin-bottom: 15px;
+  font-weight: 700;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .next-steps-list {
-  text-align: left;
-  color: #374151;
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 12px;
 }
 
 .next-steps-list li {
-  margin-bottom: 8px;
-  padding-left: 5px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  background: white;
+  border: 1px solid var(--color-border);
+  padding: 12px 16px;
+  border-radius: 8px;
 }
 
+/* =========================================
+   7. Action Buttons
+   ========================================= */
 .action-buttons {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
   margin-top: 40px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
 }
 
 .btn {
-  padding: 12px 30px;
-  border-radius: 8px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.3s ease;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-weight: 600;
   font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .btn-primary {
-  background: #3b82f6;
+  background-color: var(--color-primary);
   color: white;
-  border: 2px solid #3b82f6;
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+  border: 1px solid transparent;
 }
 
 .btn-primary:hover {
-  background: #2563eb;
-  border-color: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.25);
 }
 
 .btn-secondary {
-  background: transparent;
-  color: #6b7280;
-  border: 2px solid #e5e7eb;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
 }
 
 .btn-secondary:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-  color: #374151;
+  background-color: #f1f5f9;
+  color: var(--color-text-main);
+  border-color: #cbd5e1;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* =========================================
+   8. Skeletons & Animations
+   ========================================= */
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.stat-skeleton, .inline-skeleton {
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+.stat-skeleton { height: 28px; width: 60%; }
+.inline-skeleton { height: 16px; width: 40px; display: inline-block; }
+
+/* =========================================
+   9. Mobile Responsiveness
+   ========================================= */
+@media (max-width: 850px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
   .confirmation-container {
-    padding: 40px 20px;
-    margin: 20px;
+    padding: 24px;
   }
   
   .confirmation-title {
-    font-size: 2rem;
+    font-size: 1.75rem;
   }
   
   .stats-grid {
     grid-template-columns: 1fr;
-    gap: 15px;
   }
-  
-  .stat-card {
-    padding: 15px;
+
+  .stats-summary {
+    flex-direction: column;
     gap: 12px;
-  }
-  
-  .stat-value {
-    font-size: 1.5rem;
-  }
-  
-  .stats-section {
-    padding: 20px;
-  }
-  
-  .summary-item {
-    flex-direction: column;
     align-items: flex-start;
-    gap: 5px;
   }
-  
-  .job-meta-info {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
+
   .action-buttons {
     flex-direction: column;
-    gap: 15px;
+    width: 100%;
   }
-  
+
   .btn {
-    justify-content: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .confirmation-title {
-    font-size: 1.8rem;
-  }
-  
-  .confirmation-message {
-    font-size: 1.1rem;
-  }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .stat-card {
-    flex-direction: column;
-    text-align: center;
-    padding: 20px 15px;
-  }
-  
-  .stat-content {
-    text-align: center;
-  }
-  
-  .stats-title {
-    font-size: 1.2rem;
-  }
-}
-
-/* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
-  .confirmation-container {
-    background: #1f2937;
-    color: #f9fafb;
-  }
-  
-  .confirmation-title,
-  .job-details-title,
-  .stats-title {
-    color: #f9fafb;
-  }
-  
-  .confirmation-message {
-    color: #d1d5db;
-  }
-  
-  .stats-section {
-    background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
-    border-color: #4b5563;
-  }
-  
-  .stat-card,
-  .stats-summary {
-    background: #374151;
-    border-color: #4b5563;
-  }
-  
-  .summary-label {
-    color: #d1d5db;
-  }
-  
-  .summary-value {
-    color: #f9fafb;
+    width: 100%;
   }
 }

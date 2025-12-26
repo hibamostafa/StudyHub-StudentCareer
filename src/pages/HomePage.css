@@ -231,7 +231,8 @@
 
 /* optional backgrounds for cards */
 .student {
-  background-image: url('https://i.pinimg.com/736x/87/e4/64/87e464e59f5024f7ed4d2218edc764b5.jpg');
+  /* Use forward slashes and go up a directory */
+  background-image: url('../assets/img/koreanGirl.png');
   background-size: cover;
   background-position: center;
 }
@@ -287,7 +288,6 @@
 .stat-label {
   font-size: 0.85em; /* Smaller for the labels */
   color: #666; /* Lighter gray for the labels */
-  text-transform: lowercase; /* Ensure labels are lowercase as requested/in image */
 }
 
 .divider {
@@ -532,7 +532,7 @@ text-decoration: none; /* removes underline */
   background-color: #e3e5e7;
   border-radius: 16px;
   padding: 34px;
-  width: 500px;
+  width: 550px;
   font-family: 'Segoe UI', sans-serif;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
   color: #1c1c1c;
@@ -730,7 +730,7 @@ text-decoration: none; /* removes underline */
   font-family: 'Segoe UI', sans-serif;
   color: #1c1c1c;
   position: relative;
-  top: 2600px;
+  top: 2670px;
 }
 
 .subscribe-section {
@@ -1071,26 +1071,51 @@ text-decoration: none; /* removes underline */
   transform: translateY(0);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
-
 .logout-btn {
   padding: 10px 15px;
-  background: #000000; /* Standard danger color */
-  color: white;
+  background: #000000;
+  color: #ffffff;
+
   border: none;
   border-radius: 6px;
   cursor: pointer;
+
   font-size: 15px;
-  transition: background 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle button shadow */
+  font-weight: 600;
+
+  text-decoration: none;          /* remove underline */
+  outline: none;
+
+  display: inline-flex;           /* keeps button look even if it's <a> */
+  align-items: center;
+  justify-content: center;
+
+  transition: 
+    background 0.2s ease-in-out,
+    transform 0.1s ease-in-out,
+    box-shadow 0.2s ease;
+
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Hover */
 .logout-btn:hover {
-  background: #000000; /* Darker shade on hover */
-  transform: translateY(-2px); /* More noticeable lift */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Deeper shadow on hover */
+  background: #000000;
+  color: #ffffff;
+  text-decoration: none;          /* ensure no underline on hover */
+
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* Active */
 .logout-btn:active {
   transform: translateY(0);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* If used as <a> specifically */
+.logout-btn:visited {
+  color: #ffffff;
+  text-decoration: none;
 }

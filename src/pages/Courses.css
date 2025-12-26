@@ -12,7 +12,7 @@ html, body {
   background-color: #f8f7f4;
   font-family: 'Poppins', sans-serif;
   color: #333;
-  width: 150%;
+  width: 100%;
   overflow-x: hidden; /* Hides components outside the screen width */
   position: relative;
 }
@@ -27,28 +27,18 @@ html, body {
   letter-spacing: 0.5px;
   line-height: 1.3;
   margin-bottom: 1rem;
-  padding: 0 20px;
-  position: absolute;
-  left: 75px;
-  top: 250px;
-  justify-content: left;
-  width: 650px;
-  animation: fadeInUp 0.8s ease-out;
-}
-.para-courses{
+  
+  }
+.para-courses {
   text-align: left;
   font-family: 'Poppins', sans-serif;
   font-size: 1.3rem;
   color: #696868d6;
   letter-spacing: 0.5px;
-  line-height: 1.2;
-  margin-bottom: 1rem;
-  padding: 0 20px;
-  position: absolute;
-  left: 75px;
-  top: 400px;
-  justify-content: left;
-  width: 650px;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  padding: 0 2rem;
+  max-width: 650px;
   animation: fadeInUp 0.8s ease-out;
 }
 .navbar-container {
@@ -262,7 +252,7 @@ html, body {
     background-color: var(--blue-accent-light);
     width: 230px;
     height: 350px;
-    top: 360px;
+    top: 350px;
     left: -70px;
     z-index: 2;
 } 
@@ -728,7 +718,7 @@ html, body {
 }
 
 .crsOv_11 {
-  max-width: 1200px;
+  max-width: 1500px;
   margin: 0 auto;
 }
 
@@ -749,6 +739,7 @@ html, body {
   font-size: 1.1rem;
   margin-bottom: 1.5rem;
   opacity: 0.9;
+  max-width: 500px;
 }
 
 .crsOv_15 {
@@ -783,9 +774,12 @@ html, body {
 }
 
 .crsOv_22 {
-  width: 110%;
-  height: 250px;
+  width: 40%;
+  height: 40%;
   object-fit: cover;
+  position: absolute;
+  top: 18%;
+  left: 55%;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
@@ -1630,10 +1624,8 @@ html, body {
   font-weight: 600;
   min-width: 120px;
   transition: all 0.3s ease;
-  position: absolute;
-  /* Add these to align left */
   display: block; 
-  margin-left: 1250px;       
+  margin-left: auto;       
 }
 .exerciseDifficulty_w8nLo{
   color: #fff;
@@ -1644,9 +1636,7 @@ html, body {
   letter-spacing: 0.3px;
   display: inline-block;
   box-shadow: 0 2px 8px rgba(58, 37, 255, 0.2);
-  position: absolute;
-  margin-left: 1050px;  
-  margin-top:-20px ;
+  margin-left: auto;
 }
 
 .exerciseButton_v4tLs.completedBtn {
@@ -1715,11 +1705,12 @@ html, body {
   font-family: 'Permanent Marker', cursive, 'Inter', sans-serif;
   max-width: 1200px;
   margin: 2rem auto;
-  padding: 0 1.5rem;
+  padding: 1.5rem;
   background-color: #f0f2f5;
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding-bottom: 2rem;
+
+  /* space between cards */
 }
 
 .sharedNotesTitle_x91 {
@@ -1765,46 +1756,57 @@ html, body {
   box-shadow: 0 4px 15px rgba(58, 37, 255, 0.3);
 }
 .sharedNotesGrid_x92 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 3rem;
-  padding: 1rem;
-}
 
+  font-family: 'Permanent Marker', cursive, 'Inter', sans-serif;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background-color: #f0f2f5;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 cards per row */
+  gap: 1.5rem; /* space between cards */
+
+}
+/* Core Card Container */
 .noteCard_x92 {
   position: relative;
-  background: #ffffffff;
-  border: 1px solid #7d7b78ff;
-  border-radius: 8px;
-  padding: 1.8rem;
-  box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.15), -2px -2px 5px rgba(255, 255, 255, 0.5);
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-  display: inline-flex;
+  background: #ffffff;
+  /* Soft border instead of dark grey */
+  border: 1px solid #e2e8f0; 
+  border-radius: 16px;
+  padding: 2rem;
+  width: 550px;
+  box-shadow: 
+    0 1px 3px 0 rgba(0, 0, 0, 0.1), 
+    0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-height: 480px;
-  font-family: 'Inter', sans-serif;
+  /* Formal Font Stack */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+.noteCard_x92:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e1;
+}
+
+/* Removed noteTape_x92 as it is too casual/hand-drawn for a formal look */
 .noteTape_x92 {
-  position: absolute;
-  top: -15px;
-  left: 20%;
-  width: 60%;
-  height: 30px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 5px;
-  transform: rotate(2deg);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  display: none; 
 }
 
 .noteHeader_x92 {
-  display: inline;
+  display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
 }
 
 .noteAuthorBox_x92 {
@@ -1814,155 +1816,212 @@ html, body {
 }
 
 .noteAuthorImg_x92 {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px; /* Modern "Squircle" look */
   object-fit: cover;
-  border: 3px solid #2d1cc8ff;
+  border: 1px solid #f1f5f9;
 }
 
 .noteAuthorName_x92 {
   font-weight: 600;
-  color: #4a4a4a;
+  color: #0f172a; /* Dark Slate */
   font-size: 0.95rem;
+  letter-spacing: -0.01em;
 }
+
+/* File Type Badge */
 .noteCardFileType_x93 {
-  background: #3a25ff;
-  color: white;
-  padding: 8px 15px;
-  border-radius: 25px;
-  width: 60px;
-  font-size: 0.8rem;
-  margin-left: 400px;
-  display: flex;
+  background: #f1f5f9; /* Subtle grey instead of loud blue */
+  color: #475569;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  box-shadow: 0 3px 10px rgba(37, 65, 249, 0.3);
-}
-
-.noteCardTitle_x93 {
-  font-family: 'Permanent Marker', cursive;
-  margin: 0 0 0.75rem 0;
-  font-size: 1.6rem;
+  gap: 6px;
   font-weight: 700;
-  color: #34495e;
-  line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid #e2e8f0;
 }
 
+/* Title: Clean and Authoritative */
+.noteCardTitle_x93 {
+  font-family: 'Inter', sans-serif; /* Removed Permanent Marker */
+  margin: 0.5rem 0 1rem 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.2;
+  letter-spacing: -0.025em; /* Tighter tracking for headlines */
+}
+
+/* Stats Bar */
 .noteCardStats_x93 {
   display: flex;
   align-items: center;
   gap: 15px;
   margin-bottom: 1.25rem;
-  padding: 10px 0;
-  border-bottom: 1px dashed #3a25ff;
-  color: #6c7a89;
-}
-
-.noteCardStatsStars_x93 {
-  display: flex;
-  align-items: center;
-  gap: 50px;
-  color: #ffffffff;
-  font-weight: 600;
-}
-
-.noteCardStatsStars_x93 span {
-  color: #6c7a89;
-  font-size: 0.9rem;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9; /* Solid line instead of dashed */
+  color: #64748b;
 }
 
 .noteCardStatsNumbers_x93 {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.9rem;
-}
-.notePreview_f7g {
-  color: #4a4a4a;
-  font-size: 1rem;
-  line-height: 1.7;
-  margin-bottom: 1.5rem;
-  background-color: #fff;
-  padding: 1.25rem;
-  border-radius: 8px;
-  border-left: 4px solid #3a25ff;
-  max-height: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.noteAdditional_f7g {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px dashed #3a25ff;
-}
-
-.noteFeatureLeft_f7g {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.noteFeatureItem_f7g {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  color: #6c7a89;
+  gap: 6px;
+  font-size: 0.85rem;
   font-weight: 500;
 }
 
+/* Preview Section */
+.notePreview_f7g {
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  background-color: #f8fafc;
+  padding: 1.25rem;
+  border-radius: 12px;
+  border-left: 3px solid #6366f1; /* Indigo Accent */
+  flex-grow: 1;
+}
+
+/* Footer / Additional Info Container */
+.noteAdditional_f7g {
+  display: flex;
+  flex-direction: column; /* Stack metadata and actions for better flow */
+  gap: 1.25rem;
+  padding: 1.25rem 0 0 0; /* Only top padding since parent usually has side padding */
+  margin-top: auto; /* Pushes footer to bottom if card height is fixed */
+  border-top: 1px solid #f1f5f9;
+  width: 100%;
+  position: relative; /* Removed the left: -11% hack */
+}
+
+/* Row for Metadata (Date, Tags, Size) */
+.noteFeatureLeft_f7g, 
 .noteFeatureRight_f7g {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  color: #64748b; /* Muted Slate 500 */
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 450;
+}
+
+/* Individual Metadata Item */
+.noteFeatureItem_f7g,
+.noteFeatureRightItem_f7g {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease;
+}
+
+.noteFeatureItem_f7g:hover {
+  color: #1e293b; /* Darkens on hover */
+}
+
+/* Icon styling inside metadata */
+.noteFeatureItem_f7g svg {
+  color: #94a3b8; /* Even lighter icons for better hierarchy */
+}
+
+/* Actions Row (The Buttons) */
+.noteActions_f7g {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Aligns buttons to the left */
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Base button styling for modern look */
+.noteActions_f7g button {
+  font-family: 'Inter', sans-serif;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* The primary CTA (Download) - full width or emphasized */
+.noteDownloadButton_f9x {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
+  background: #0f172a; /* Deep Slate/Navy */
+  color: #ffffff;
+  border: none;
+  padding: 10px 16px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.noteDownloadButton_f9x:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+
+/* Adjustments for Mobile */
+@media (max-width: 640px) {
+  .noteActions_f7g {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns on mobile */
+  }
+  
+  .noteDownloadButton_f9x {
+    grid-column: span 2;
+  }
+}
+.noteFeatureItem_f7g {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .noteFeatureRightItem_f7g {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  color: #6c7a89;
-  background-color: #ffffffff;
-  padding: 6px 12px;
-  border-radius: 10px;
-  font-weight: 500;
-}
-
-.noteActions_f7g {
-  display: inline;
-  justify-content: flex-end;
-}
-
-.noteActionButton_f7g,
-.noteDownloadButton_f9x {
-  display: inline;       
-  align-items: center;
-  height: 50px;
-  margin-right: 1rem;          
-}
-
-.noteActionButton_f7g {
-  padding: 0.75rem 1.5rem;
-  border: 1px solid #3a25ff;
-  color: #3a25ff;
-  border-radius: 10px;
-  cursor: pointer;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #6366f1;
+  background-color: #eef2ff;
+  padding: 6px 10px;
+  border-radius: 8px;
   font-weight: 600;
-  transition: all 0.3s ease;
-  font-size: 1rem;
 }
+
+/* Author Section in Detail */
+.notesAuthorName_f9x {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.notesAuthorEmail_f9x {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+
 
 .noteDownloadButton_f9x {
   padding: 0.75rem 1.5rem;
+  text-align: center;
   background: linear-gradient(135deg, #3a25ff, #5d4bff);
   color: #fff;
   border: none;
@@ -1972,7 +2031,7 @@ html, body {
   transition: all 0.3s ease;
   font-size: 1rem;
   display: inline-flex;
-  align-items: center;
+  max-width: max-content;
 }
 
 
@@ -2088,18 +2147,19 @@ html, body {
   padding: 6rem 6rem;
 }
 .categories-title {
-  text-align: center;
-  font-size: 40px;
-  margin-bottom: 2.9rem;
-    margin-top: 2.9rem;
-    position: relative;
-    left: 550px;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #1f2937;
 
-  margin: 20px;
-  width: 100%;
-  padding: 0.5rem 1rem; 
+  text-align: center;
+  
+  /* FIX: Use 'margin' instead of 'margin-top' */
+  margin: 3rem auto; 
+
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
 }
 .section-subtitle {

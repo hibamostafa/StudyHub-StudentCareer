@@ -1,5 +1,3 @@
-// 3ndi 7amas w katbtlk comment 3lshan tafhmi b3d kda fkdt al sha8f fa ma kameltsh
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -21,7 +19,6 @@ import {
   Calendar,
   Building2
 } from 'lucide-react';
-// تأكد من مسار الملف الصحيح
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import './ConfirmationPage.css';
 import { db } from '../firebase/firebaseConfig';
@@ -194,7 +191,7 @@ function ConfirmationPage() {
           thisMonthApplications,
           jobApplicationCount,
           userTotalApplications,
-          companyApplications: totalApplications, // أو يمكنك إضافة query محدد للشركة
+          companyApplications: totalApplications, 
           averageResponseTime: '3-5 days',
           todayChange: todayChange > 0 ? `+${todayChange}%` : `${todayChange}%`,
           weekChange: weekChange > 0 ? `+${weekChange}%` : `${weekChange}%`,
@@ -290,8 +287,6 @@ function ConfirmationPage() {
           <span className="application-id-label">Application ID:</span>
           {applicationId}
         </div>
-
-        {/* Enhanced Statistics Section */}
         <div className="stats-section">
           <h3 className="stats-title">
             <BarChart3 size={20} />

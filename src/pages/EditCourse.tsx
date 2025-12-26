@@ -29,7 +29,7 @@ const EditCourse = () => {
     if (!currentUser) return;
     const fetchCourses = async () => {
       try {
-        const myCourses = await CourseService.getCoursesByTeacher(currentUser.uid);
+        const myCourses = await CourseService.getCoursesByCoordinator(currentUser.uid);
         setCourses(myCourses);
       } catch (err) {
         console.error('Error loading courses:', err);
@@ -53,7 +53,7 @@ const EditCourse = () => {
     try {
       await CourseService.updateCourse(selectedCourse.id, selectedCourse, currentUser.uid);
       alert('✅ Course updated successfully!');
-      const updated = await CourseService.getCoursesByTeacher(currentUser.uid);
+      const updated = await CourseService.getCoursesByCoordinator(currentUser.uid);
       setCourses(updated);
       setSelectedCourse(null);
       window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -1,38 +1,39 @@
-import { useState, useEffect } from "react";
-import type { ChangeEvent } from "react";
-import { Link } from 'react-router-dom';
-import { MessageSquare, BookOpen, Briefcase, Users } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
-import "./jobs.css";
-import Apply from './Apply';
+import { useState, useEffect, useMemo } from "react";
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { 
+  MessageSquare, BookOpen, Briefcase, Users, Search, 
+  Plus, Clock
+} from 'lucide-react';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import {
-  FaInstagram,
-  FaFacebookF,
-  FaTwitter,
-  FaYoutube,
   FaUser,
   FaBriefcase,
   FaBook,
   FaFileDownload,
   FaPencilAlt,
   FaSignOutAlt,
-} from 'react-icons/fa';
-
-
-import {
-  FaSearch,
   FaMapMarkerAlt,
-  FaPen,
-  FaMoneyBillWave,
   FaLaptopCode,
-} from "react-icons/fa";
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '../firebase/firebaseConfig';
+  FaMoneyBillWave,
+  FaSearch
+} from 'react-icons/fa';
+import {
+  FaInstagram,
+  FaFacebookF,
+  FaTwitter,
+  FaYoutube,
+  FaFileAlt,
+  FaTools,
+  FaPlusSquare,
+  FaUserTag,
+} from 'react-icons/fa';
+import { auth, db } from '../firebase/firebaseConfig';
 import { UserService } from '../firebase/src/firebaseServices';
-import { collection, addDoc, onSnapshot, query, orderBy, where, getDocs } from 'firebase/firestore';
-import { db } from "../firebase/firebaseConfig";
+import "./jobs.css";
 
-interface Hiring {
+interface Job {
+  id?: string;
   company: string;
   title: string;
   location: string;
@@ -40,199 +41,133 @@ interface Hiring {
   salary: string;
   tech: string;
   type: string;
+  posterId?: string;
+  posterName?: string;
+  timestamp?: any;
 }
-interface UserData {
-  skills: string[];
-  uid: string;
-  displayName: string;
-  email: string;
-  phone?: string;
-  location?: string;
-  photoURL?: string | null;
-  bio?: string;
-  company?: string;
-  appliedJobs?: number;
-  connections?: number;
-  coursesEnrolled?: number;
-  cvUploaded?: boolean;
-  createdAt?: any;
-}
-interface Filters {
-  title: string;
-  location: string;
-  remote: string;
-  salary: string;
-  tech: string;
-  type: string;
-}
-function HomePage() {
+
+function Jobs() {
+  // --- State ---
+  const [activeMode, setActiveMode] = useState<'seek' | 'recruit'>('seek');
   const [user] = useAuthState(auth);
   const [userData, setUserData] = useState<any>(null);
+  const [jobsData, setJobsData] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const navigate = useNavigate();
 
+  // Search State
+  const [filters, setFilters] = useState({
+    search: "",
+    location: "",
+    type: "",
+    remote: "",
+    tech: "",
+    salary: ""
+  });
+
+  // Post Job State
+  const [hireData, setHireData] = useState<Job>({
+    company: "", title: "", location: "", remote: "", salary: "", tech: "", type: ""
+  });
+
+  const [applicantsCounts] = useState<Record<string, number>>({}); 
+
+  // --- Effects ---
+  useEffect(() => {
+    if (user) {
+      UserService.getUserData(user.uid).then(setUserData);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const q = query(collection(db, 'jobs'), orderBy('timestamp', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setJobsData(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job)));
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // --- Helpers ---
+  const handleSignOut = () => { auth.signOut(); navigate("/signin"); };
+
+  const handlePostJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return alert("Please sign in to post.");
+    try {
+      await addDoc(collection(db, 'jobs'), {
+        ...hireData,
+        posterId: user.uid,
+        posterName: userData?.displayName || 'Anonymous',
+        timestamp: new Date(),
+      });
+      alert('Job posted successfully!');
+      setHireData({ company: "", title: "", location: "", remote: "", salary: "", tech: "", type: "" });
+      setActiveMode('seek'); // Auto switch to list to show the new job
+    } catch (error) {
+      console.error(error);
+    }
+  };
   useEffect(() => {
     const fetchUserData = async () => {
       if (user) {
         const data = await UserService.getUserData(user.uid);
         setUserData(data);
+        // Sync stats whenever they visit home
+        await UserService.updateUserStats(user.uid);
       }
     };
     fetchUserData();
   }, [user]);
-}
-function Jobs() {
-  const [jobsData, setJobsData] = useState<any[]>([]);
-  const [user] = useAuthState(auth);
-  const [userData, setUserData] = useState<any>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [applicantsCounts, setApplicantsCounts] = useState<Record<string, number>>({});
-  const [hireData, setHireData] = useState<Hiring>({
-    company: "",
-    title: "",
-    location: "",
-    remote: "",
-    salary: "",
-    tech: "",
-    type: "",
-  });
 
-  const [filters, setFilters] = useState<Filters>({
-    title: "",
-    location: "",
-    remote: "",
-    salary: "",
-    tech: "",
-    type: "",
-  });
+  const displayName = userData?.firstName && userData?.lastName
+    ? `${userData.firstName} ${userData.lastName}`
+    : userData?.firstName || 'User';
 
-  // Initialize appliedFilters here so all jobs are shown immediately (no need to click Search).
-  // If you add this, remove or comment out the later `const [appliedFilters, setAppliedFilters] = useState<Filters>(...)`
-  // that appears further down in the file to avoid a duplicate declaration.
-  const [appliedFilters, setAppliedFilters] = useState<Filters>({ ...{
-    title: "",
-    location: "",
-    remote: "",
-    salary: "",
-    tech: "",
-    type: "",
-  } });
-
- 
-
-  useEffect(() => {
-    const jobsRef = collection(db, 'jobs');
-    const q = query(jobsRef, orderBy('timestamp', 'desc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const jobsList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setJobsData(jobsList);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // live applicants count per job
-  useEffect(() => {
-    const appsRef = collection(db, 'applications');
-    const unsubscribe = onSnapshot(appsRef, (snapshot) => {
-      const counts: Record<string, number> = {};
-      snapshot.docs.forEach((d) => {
-        const data: any = d.data();
-        const jobId = data.jobId;
-        if (jobId) {
-          counts[jobId] = (counts[jobId] || 0) + 1;
-        }
-      });
-      setApplicantsCounts(counts);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleFilterChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
+  const handleLogout = async () => {
+    await auth.signOut();
+    navigate("/signin");
+  };
+  // Missing handlers added here to fix errors
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleHireChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setHireData({ ...hireData, [e.target.name]: e.target.value });
+  const handleHireChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setHireData(prev => ({ ...prev, [name]: value }));
   };
 
-  // When the user clicks Search we set appliedFilters which will be used to filter the jobs list
   const handleSearch = () => {
-    setAppliedFilters({ ...filters });
+    console.log("Searching...");
   };
 
-  const handlePostJob = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await addDoc(collection(db, 'jobs'), {
-        ...hireData,
-        posterId: user?.uid || null,
-        posterName: userData?.displayName || user?.email?.split('@')[0] || 'user',
-        timestamp: new Date(),
-      });
-      alert('done! Job posted successfully.');
-      setHireData({
-        company: "",
-        title: "",
-        location: "",
-        remote: "",
-        salary: "",
-        tech: "",
-        type: "",
-      });
-    } catch (error) {
-      console.error("Error posting job: ", error);
-      alert(" fail to post job. Please try again." );
-    }
-  };
-
-
-  const searchTerms = [
-    'designer', 'Writer', 'Team leader', 'Fullstack', 'web developer',
-    'Senior', 'Financial Analyst', 'Software', 'Web', 'Techno'
-  ];
-
-  // compute filtered jobs based on appliedFilters; any empty filter is ignored
-  const filteredJobs = jobsData.filter((job) => {
-    const matches = (field: keyof Filters) => {
-      const filterValue = (appliedFilters[field] || '').toString().trim().toLowerCase();
-      if (!filterValue) return true; // ignore empty filters
-      const jobValue = ((job as any)[field] || '').toString().toLowerCase();
-      return jobValue.includes(filterValue);
-    };
-
-    // For title we can also check job.title or job.title and job.company if desired
-    return (
-      matches('title') &&
-      matches('location') &&
-      matches('remote') &&
-      matches('salary') &&
-      matches('tech') &&
-      matches('type')
-    );
-  });
+  const filteredJobs = useMemo(() => {
+    return jobsData.filter(job => {
+      const matchSearch = !filters.search || 
+        job.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+        job.company.toLowerCase().includes(filters.search.toLowerCase());
+      const matchLoc = !filters.location || job.location.toLowerCase().includes(filters.location.toLowerCase());
+      const matchType = !filters.type || job.type === filters.type;
+      const matchRemote = !filters.remote || job.remote === filters.remote;
+      const matchTech = !filters.tech || job.tech.toLowerCase().includes(filters.tech.toLowerCase());
+      
+      return matchSearch && matchLoc && matchType && matchRemote && matchTech;
+    });
+  }, [jobsData, filters]);
 
   return (
-    <div className="jobsearch">
-      <div className="Jobs">
-       
-          <nav className="navbar-container2">
-                     <div className="navbar-logo2">
-   <NavLink
-      to="/homepage"
-    >
-        <img src="src/assets/img/logo2.png" className="logo2" alt="Logo" />
-
-    </NavLink>
-</div>
-        
+    <div>
+    <div className="jobsbody">
+     <nav className="navbar-container2">
+        <div className="navbar-logo2">
+          <NavLink to="/homepage">
+            <img src="src/assets/img/logo2.png" className="logo2" alt="Logo" />
+          </NavLink>
+        </div>
         <ul className="navbar-links2">
           <li>
             <NavLink
@@ -261,94 +196,97 @@ function Jobs() {
             </NavLink>
           </li>
         </ul>
-        
-        
-                <div className="profile-container">
-                         <button
-                           className="profile-btn"
-                           onClick={() => setDropdownOpen(!dropdownOpen)}
-                         >
-                           {userData?.photoURL ? (
-                             <img src={userData.photoURL} alt="Profile" className="profile-img" />
-                           ) : (
-                             <FaUser size={24} color="#fff" />
-                           )}
-                         </button>
-                   
-        
-                    {dropdownOpen && (
-                      <div className="profile-dropdown">
-                        <div className="profile-header">
-                          {userData?.photoURL && userData.photoURL.trim() ? (
-                            <img src={userData.photoURL} alt="Profile" className="profile-pic" />
-                          ) : (
-                            <FaUser size={40} color="#ffffffff" />
-                          )}
-                          <h4>Welcome, {userData?.displayName || user?.email?.split('@')[0] || 'User'}!</h4>
-                        </div>
-                        <ul>
-                          <li>
-                            <FaBriefcase /> Applied Jobs: <span>{userData?.appliedJobs || 0}</span>
-                          </li>
-                          <li>
-                            <FaBook /> Courses Taken: <span>{userData?.coursesEnrolled || 0}</span>
-                          </li>
-                          <li>
-                            <FaPencilAlt /> Exercises Done: <span>{userData?.exercisesCompleted || 0}</span>
-                          </li>
-                          <li>
-                            <FaFileDownload /> Notes Downloaded: <span>{userData?.downloads || 0}</span>
-                          </li>
-                          <li>Shared Notes: <span>{userData?.sharedNotes || 0}</span></li>
-                          <li>
-                            CV Status: <span>{userData?.cvUploaded ? 'Uploaded' : 'Not Uploaded'}</span>
-                          </li>
-                        </ul>
-                        <div className="profile-actions">
-                          <Link to="/profile" className="profile-link">
-                            View Profile
-                          </Link>
-                          <button className="logout-btn" onClick={() => auth.signOut()}>
-                            <FaSignOutAlt /> Sign Out
-                          </button>
-                        </div>
-                      </div>
+    
+    <div className="profile-container">
+      <button className="profile-btn" onClick={() => setDropdownOpen(!dropdownOpen)}>
+                {userData?.photoURL ? (
+                  <img src={userData.photoURL} alt="Profile" className="profile-img" />
+                ) : (
+                  <FaUser size={24} color="#fff" />
+                )}
+              </button>
+    
+              {dropdownOpen && (
+                <div className="profile-dropdown">
+                  <div className="profile-header">
+                    {userData?.photoURL ? (
+                      <img src={userData.photoURL} alt="Profile" className="profile-pic" />
+                    ) : (
+                      <FaUser size={40} color="#fff" />
                     )}
+                    <div className="user-dropdown-info">
+                      <h4>Welcome, {displayName}!</h4>
+                      <div className="role-badge">
+                      </div>
+                    </div>
                   </div>
-          <div className="divider2"></div>
-        
-        
-                     <div className="navbar-actions">
-    <button className="signOut-button">
-        <Link to="/signin">Sign Out</Link>
-    </button>
-
-</div>
-        
-        
-                </nav>        
-
-        {/* Hero Section */}
-        <img src="https://i.pinimg.com/1200x/42/ac/3d/42ac3da633954a5dd14666ce3f3acc21.jpg" alt="" className="backgroundimg" />
-        <div className="hero-content1">
-          <h1 className="titleJob1">
-            Ready for Your Next Job? <br />
-            Let’s Get <span className="highlight3">You Hired!</span>
-          </h1>
-          {/* <p className="JobParagraph">
-            Find roles that match your skills and
-            Start your journey for a better career.
-          </p> */}
-          <div className="button-group1">
-            <div className="search2">
-              Choose the one that best fits the tone and space you have!
-              Take on new opportunities, grow, and make a meaningful impact in any organization you join
-            </div>
-          
-          </div>
-        </div>
+    
+                  <ul className="dropdown-stats">
+                                     <li><FaUserTag />Role: <span>{userData?.role || 'Member'}</span></li>
+                                     <li><FaTools /> Skills: <span>{userData?.skills?.length || 0}</span></li>
+                                     <li><FaBriefcase /> Applied Jobs: <span>{userData?.appliedJobs || 0}</span></li>
+                                     <li><FaPlusSquare /> Jobs Added: <span>{userData?.jobsPosted || 0}</span></li>
+                                     <li><FaFileAlt /> Shared Notes: <span>{userData?.sharedNotes || 0}</span></li>
+                                   </ul>
+    
+                  <div className="profile-actions">
+                    <Link to="/profile" className="profile-link" onClick={() => setDropdownOpen(false)}>
+                      View Profile
+                    </Link>
+                    <button className="logout-btn" onClick={handleLogout}>
+                      <FaSignOutAlt /> Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+              </div>
+      <div className="divider2"></div>
+    
+    
+            <div className="navbar-actions">
+        <button className="signOut-button">
+            <Link to="/signin">Sign Out</Link>
+        </button>
        
-        <div className="filter-container">
+    </div>
+    
+    
+            </nav> 
+      <div className="page-container">
+        
+        <header className="hero-header">
+          <h1 className="hero-title">
+            {activeMode === 'seek' ? 'Discover Your Next ' : 'Find Your Perfect '}
+            <span className="highlight-text">{activeMode === 'seek' ? 'Opportunity' : 'Candidate'}</span>
+          </h1>
+          <p className="hero-desc">
+            {activeMode === 'seek' 
+             ? "Browse thousands of job openings from top companies and startups. Take the next step in your career today."
+             : "Post a job in minutes and connect with top-tier talent from our community of developers."}
+          </p>
+          
+          {/* Mode Switcher */}
+          <div className="mode-toggle">
+            <button 
+              className={`toggle-btn ${activeMode === 'seek' ? 'active' : ''}`}
+              onClick={() => setActiveMode('seek')}
+            >
+              <Search size={18} /> Find Work
+            </button>
+            <button 
+              className={`toggle-btn ${activeMode === 'recruit' ? 'active' : ''}`}
+              onClick={() => setActiveMode('recruit')}
+            >
+              <Plus size={18} /> Post a Job
+            </button>
+          </div>
+        </header>
+
+        {/* 3. SEEK MODE */}
+        {activeMode === 'seek' && (
+          <>
+            {/* Modern Search Bar */}
+           <div className="filter-container">
           <h1 className="filter-title">Find Your Dream Job</h1>
           <p className="filter-paragraph">
             Browse <span>exciting job openings</span>, explore <span>new career paths</span>,
@@ -418,7 +356,7 @@ function Jobs() {
                   <span className="job-type">{job.company}</span>
                 </div>
                 <h3 className="job-title">{job.title}</h3>
-                <p className="job-salary">€ {job.salary} / Yearly</p>
+                <p className="job-salary">{job.salary} / Yearly</p>
                 <div className="job-footer">
                   <p><FaMapMarkerAlt /> {job.location}</p>
                   <p><FaBriefcase /> {job.tech}</p>
@@ -445,7 +383,7 @@ function Jobs() {
                       <Users size={16} />
                       Applicants
                       <span style={{ background: '#fff', color: '#000000', borderRadius: '999px', padding: '2px 8px', fontWeight: 700 }}>
-                        {applicantsCounts[job.id] || 0}
+                        {applicantsCounts[job.id || ''] || 0}
                       </span>
                     </Link>
                   )}
@@ -453,19 +391,19 @@ function Jobs() {
               </div>
             ))}
             {filteredJobs.length === 0 && (
-              <div style={{ padding: 20, textAlign: 'center' }}>
+              <div style={{ padding: 20, textAlign: 'center', color: '#666' }}>
                 No jobs found matching your search.
               </div>
             )}
           </div>
-        </div>
-        <div className="hirring">
-          <img src="https://i.pinimg.com/originals/a4/8e/33/a48e33a09335b257fe221c0943e4e1ea.gif" className="hirreimage" alt="" />
-          <h1 className="hire-head">Discover Your Perfect Team Member Quickly</h1>
-          <p className="hire-paragraph">Find your perfect worker in the fastest time possible. Connect with skilled professionals quickly and efficiently to get the right fit for your team.</p>
-        </div>
-
-        <div className="body-form">
+          </div>
+          </>
+        )}
+        
+        {/* 4. RECRUIT MODE (Post Job) */}
+        {activeMode === 'recruit' && (
+          <div className="post-form-card">
+            <div className="body-form">
           <h1 className="form-title-hire">Hire the Best Talent</h1>
           <p className="form-para-hire">Post a job and get candidates quickly.</p>
           <h2 className="hire-title">Enter Job Details</h2>
@@ -535,10 +473,11 @@ function Jobs() {
           </form>
         </div>
       </div>
+        )}
+      </div>
     </div>
+  </div>
   );
-
 }
 
 export default Jobs;
-

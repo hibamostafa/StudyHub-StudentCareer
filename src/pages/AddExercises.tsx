@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase/firebaseConfig';
 import { ExercisesService, UserService } from '../firebase/src/firebaseServices';
-import { 
-  BookOpen, DollarSign, Tag, FileText, User, Clock, 
-  Plus, X, Star, Award, Target, CheckCircle, ArrowLeft,
-  Info, BarChart3, List, HelpCircle, Hash, Gauge, Edit3, MessageSquare
+import {
+    BookOpen, DollarSign, Tag, FileText, User, Clock,
+    Plus, X, Star, Award, Target, CheckCircle, ArrowLeft,
+    Info, BarChart3, List, HelpCircle, Hash, Gauge, Edit3, MessageSquare
 } from 'lucide-react';
 import './AddCourse.css'; // Assuming this is where custom styles/animations live
 
@@ -29,6 +29,7 @@ interface Question {
 interface ExerciseFormData {
     id: number;
     title: string;
+    category: string;
     difficulty: string;
     duration: string;
     points: number;
@@ -44,6 +45,7 @@ const AddExercise = () => {
     const [formData, setFormData] = useState<ExerciseFormData>({
         id: 0,
         title: '',
+        category: '',
         difficulty: '',
         duration: '',
         points: 0,
@@ -56,7 +58,6 @@ const AddExercise = () => {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // --- Initialization and Authorization Effects ---
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -73,15 +74,13 @@ const AddExercise = () => {
     }, [user, navigate]);
 
     useEffect(() => {
-        if (!loading && userData && userData.role !== 'teacher') {
-            alert('ليس لديك صلاحية رفع كورسات. يجب أن تكون مُدرّسًا.');
+        if (!loading && userData && userData.role !== 'Coordinator') {
+            alert('No Permission .');
             navigate('/courses');
         }
     }, [loading, userData, navigate]);
 
-    // --- Handlers for Questions and Options ---
 
-    // Add a new question
     const addQuestion = () => {
         setFormData(prev => ({
             ...prev,
@@ -94,14 +93,14 @@ const AddExercise = () => {
 
     // Remove a question
     const removeQuestion = (qIndex: number) => {
-      if (formData.questions.length > 1) {
-        setFormData(prev => ({
-            ...prev,
-            questions: prev.questions.filter((_, index) => index !== qIndex)
-        }));
-      } else {
-          alert("You must have at least one question.");
-      }
+        if (formData.questions.length > 1) {
+            setFormData(prev => ({
+                ...prev,
+                questions: prev.questions.filter((_, index) => index !== qIndex)
+            }));
+        } else {
+            alert("You must have at least one question.");
+        }
     };
 
     // Handle question text change
@@ -147,19 +146,30 @@ const AddExercise = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
+
+        // Validate that a category is selected
+        if (!formData.category || formData.category.trim() === '') {
+            setError('Please select a category for the exercise before saving!');
+            setSubmitting(false);
+            return;
+        }
+
         setSubmitting(true);
         setError(null);
         try {
+            console.log(`Adding new exercise in category: ${formData.category}`);
             await ExercisesService.uploadExercises(
                 formData, // Use the complete formData object
                 user.uid
             );
             console.log('🔥 Exercise created successfully!', {
                 title: formData.title,
+                category: formData.category,
                 difficulty: formData.difficulty
             });
             alert('Exercise created successfully! 🎉');
-            navigate('/exercises'); // Navigate to the exercises list
+            
+            navigate('/courses?tab=exercises');
         } catch (err: any) {
             console.error(err);
             setError(err.message || 'An error occurred while creating the exercise.');
@@ -170,55 +180,55 @@ const AddExercise = () => {
 
     // --- Loading State Render ---
     if (loading) {
-      return (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            background: `linear-gradient(135deg, ${LIGHT_BG} 0%, #ebedee 100%)`,
-          }}
-        >
-          <div
-            style={{
-              background: CARD_BG,
-              borderRadius: "20px",
-              padding: "35px 45px",
-              textAlign: "center",
-              boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
-              color: "#444",
-            }}
-          >
+        return (
             <div
-              style={{
-                width: "48px",
-                height: "48px",
-                border: "3px solid rgba(0,0,0,0.08)",
-                borderTop: `3px solid ${PRIMARY_ACCENT}`, 
-                borderRadius: "50%",
-                margin: "0 auto 18px",
-                animation: "spin 1.2s ease-in-out infinite",
-              }}
-            />
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100vh",
+                    background: `linear-gradient(135deg, ${LIGHT_BG} 0%, #ebedee 100%)`,
+                }}
+            >
+                <div
+                    style={{
+                        background: CARD_BG,
+                        borderRadius: "20px",
+                        padding: "35px 45px",
+                        textAlign: "center",
+                        boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
+                        color: "#444",
+                    }}
+                >
+                    <div
+                        style={{
+                            width: "48px",
+                            height: "48px",
+                            border: "3px solid rgba(0,0,0,0.08)",
+                            borderTop: `3px solid ${PRIMARY_ACCENT}`,
+                            borderRadius: "50%",
+                            margin: "0 auto 18px",
+                            animation: "spin 1.2s ease-in-out infinite",
+                        }}
+                    />
 
-            <h3 style={{ marginBottom: "6px", fontWeight: 600, color: "#333" }}>
-              Loading...
-            </h3>
-            <p style={{ fontSize: "14px", color: "#777" }}>
-              Please wait a moment ✨
-            </p>
-          </div>
-          <style>
-            {`
+                    <h3 style={{ marginBottom: "6px", fontWeight: 600, color: "#333" }}>
+                        Loading...
+                    </h3>
+                    <p style={{ fontSize: "14px", color: "#777" }}>
+                        Please wait a moment ✨
+                    </p>
+                </div>
+                <style>
+                    {`
               @keyframes spin {
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
               }
             `}
-          </style>
-        </div>
-      );
+                </style>
+            </div>
+        );
     }
 
 
@@ -230,7 +240,7 @@ const AddExercise = () => {
             padding: '40px 20px',
             fontFamily: 'system-ui, -apple-system, sans-serif'
         }}>
-            
+
             {/* Header with Title and Back Button */}
             <div style={{
                 maxWidth: '1200px',
@@ -241,7 +251,7 @@ const AddExercise = () => {
                 alignItems: 'center'
             }}>
                 <button
-                    onClick={() => navigate('/exercises')} // Changed navigation target
+                    onClick={() => navigate('/courses?tab=exercises')}
                     style={{
                         background: CARD_BG,
                         border: `1px solid ${BORDER_COLOR}`,
@@ -394,7 +404,7 @@ const AddExercise = () => {
                                             <X size={16} />
                                         </button>
                                     </div>
-                                    
+
                                     {/* Question Text */}
                                     <div style={{ marginBottom: '20px' }}>
                                         <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '15px', color: '#4a5568' }}>Question Text</label>
@@ -404,17 +414,17 @@ const AddExercise = () => {
                                             placeholder="Type your multiple-choice question here..."
                                             required
                                             rows={3}
-                                            style={{ 
-                                                width: '100%', 
-                                                padding: '12px 16px', 
-                                                border: `1px solid ${BORDER_COLOR}`, 
-                                                borderRadius: '10px', 
-                                                fontSize: '15px', 
-                                                outline: 'none', 
-                                                resize: 'vertical', 
-                                                transition: 'all 0.3s ease', 
-                                                background: CARD_BG, 
-                                                fontFamily: 'inherit' 
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px 16px',
+                                                border: `1px solid ${BORDER_COLOR}`,
+                                                borderRadius: '10px',
+                                                fontSize: '15px',
+                                                outline: 'none',
+                                                resize: 'vertical',
+                                                transition: 'all 0.3s ease',
+                                                background: CARD_BG,
+                                                fontFamily: 'inherit'
                                             }}
                                             onFocus={(e) => { e.currentTarget.style.borderColor = PRIMARY_ACCENT; e.currentTarget.style.background = 'white'; e.currentTarget.style.boxShadow = `0 0 0 3px ${PRIMARY_ACCENT}33`; }}
                                             onBlur={(e) => { e.currentTarget.style.borderColor = BORDER_COLOR; e.currentTarget.style.background = CARD_BG; e.currentTarget.style.boxShadow = 'none'; }}
@@ -435,15 +445,15 @@ const AddExercise = () => {
                                                     placeholder={`Option ${optIndex + 1}`}
                                                     onChange={e => handleOptionChange(qIndex, optIndex, e.target.value)}
                                                     required
-                                                    style={{ 
-                                                        width: '100%', 
-                                                        padding: '10px 14px', 
-                                                        border: `1px solid ${BORDER_COLOR}`, 
-                                                        borderRadius: '8px', 
-                                                        fontSize: '14px', 
-                                                        outline: 'none', 
-                                                        transition: 'all 0.3s ease', 
-                                                        background: CARD_BG 
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '10px 14px',
+                                                        border: `1px solid ${BORDER_COLOR}`,
+                                                        borderRadius: '8px',
+                                                        fontSize: '14px',
+                                                        outline: 'none',
+                                                        transition: 'all 0.3s ease',
+                                                        background: CARD_BG
                                                     }}
                                                     onFocus={(e) => { e.currentTarget.style.borderColor = PRIMARY_ACCENT; e.currentTarget.style.background = 'white'; }}
                                                     onBlur={(e) => { e.currentTarget.style.borderColor = BORDER_COLOR; e.currentTarget.style.background = CARD_BG; }}
@@ -463,15 +473,15 @@ const AddExercise = () => {
                                             onChange={e => handleCorrectAnswerChange(qIndex, e.target.value)}
                                             placeholder="Enter the exact text of the correct option"
                                             required
-                                            style={{ 
-                                                width: '100%', 
-                                                padding: '12px 16px', 
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px 16px',
                                                 border: '2px solid #68d391', // Green border for correct answer field
-                                                borderRadius: '10px', 
-                                                fontSize: '15px', 
-                                                outline: 'none', 
-                                                transition: 'all 0.3s ease', 
-                                                background: '#ebfff1' 
+                                                borderRadius: '10px',
+                                                fontSize: '15px',
+                                                outline: 'none',
+                                                transition: 'all 0.3s ease',
+                                                background: '#ebfff1'
                                             }}
                                             onFocus={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.boxShadow = '0 0 0 3px #68d39155'; }}
                                             onBlur={(e) => { e.currentTarget.style.background = '#ebfff1'; e.currentTarget.style.boxShadow = 'none'; }}
@@ -519,7 +529,38 @@ const AddExercise = () => {
                                     onBlur={(e) => { e.currentTarget.style.borderColor = BORDER_COLOR; e.currentTarget.style.background = LIGHT_BG; e.currentTarget.style.boxShadow = 'none'; }}
                                 />
                             </div>
-                            
+
+                            {/* Category ✅ أضفت هذا */}
+                            <div style={{ marginBottom: '25px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '15px', color: TEXT_COLOR }}>
+                                    <Tag size={16} style={{ marginRight: '6px', display: 'inline', verticalAlign: 'middle', color: PRIMARY_ACCENT }} />
+                                    Category
+                                </label>
+                                <select
+                                    name="category"
+                                    value={formData.category}
+                                    onChange={handleChange}
+                                    required
+                                    style={{
+                                        width: '100%', padding: '12px 16px', border: `1px solid ${BORDER_COLOR}`,
+                                        borderRadius: '10px', fontSize: '15px', outline: 'none', transition: 'all 0.3s ease',
+                                        background: LIGHT_BG, fontWeight: '500', cursor: 'pointer'
+                                    }}
+                                    onFocus={(e) => { e.currentTarget.style.borderColor = PRIMARY_ACCENT; e.currentTarget.style.background = 'white'; e.currentTarget.style.boxShadow = `0 0 0 3px ${PRIMARY_ACCENT}33`; }}
+                                    onBlur={(e) => { e.currentTarget.style.borderColor = BORDER_COLOR; e.currentTarget.style.background = LIGHT_BG; e.currentTarget.style.boxShadow = 'none'; }}
+                                >
+                                    <option value="">Choose Category</option>
+                                    <option value="graphic">Graphic Design</option>
+                                    <option value="cyber">Cyber Security</option>
+                                    <option value="web">Web Development</option>
+                                    <option value="languages">Languages</option>
+                                    <option value="history">History</option>
+                                    <option value="finance">Finance</option>
+                                    <option value="mobile">Mobile Development</option>
+                                    <option value="chemistry">Chemistry</option>
+                                </select>
+                            </div>
+
                             {/* Difficulty */}
                             <div style={{ marginBottom: '25px' }}>
                                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '15px', color: TEXT_COLOR }}>
@@ -605,13 +646,13 @@ const AddExercise = () => {
                                     onBlur={(e) => { e.currentTarget.style.borderColor = BORDER_COLOR; e.currentTarget.style.background = LIGHT_BG; e.currentTarget.style.boxShadow = 'none'; }}
                                 />
                             </div>
-                            
+
                             {/* Completed Status (Optional/Default Flag) */}
                             <div style={{ marginBottom: '0' }}>
-                                <label style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: '12px', 
+                                <label style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
                                     fontWeight: '600',
                                     fontSize: '15px',
                                     color: TEXT_COLOR,
@@ -622,22 +663,22 @@ const AddExercise = () => {
                                     border: `1px solid ${BORDER_COLOR}`,
                                     transition: 'all 0.3s ease'
                                 }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#f0f4ff';
-                                    e.currentTarget.style.borderColor = PRIMARY_ACCENT;
-                                    e.currentTarget.style.boxShadow = `0 2px 10px ${PRIMARY_ACCENT}22`;
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = LIGHT_BG;
-                                    e.currentTarget.style.borderColor = BORDER_COLOR;
-                                    e.currentTarget.style.boxShadow = 'none';
-                                }}>
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#f0f4ff';
+                                        e.currentTarget.style.borderColor = PRIMARY_ACCENT;
+                                        e.currentTarget.style.boxShadow = `0 2px 10px ${PRIMARY_ACCENT}22`;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = LIGHT_BG;
+                                        e.currentTarget.style.borderColor = BORDER_COLOR;
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}>
                                     <input
                                         type="checkbox"
                                         name="completed"
                                         checked={formData.completed}
                                         onChange={handleChange}
-                                        style={{ 
+                                        style={{
                                             transform: 'scale(1.3)',
                                             accentColor: PRIMARY_ACCENT
                                         }}
@@ -689,7 +730,7 @@ const AddExercise = () => {
                     >
                         {submitting ? (
                             <>
-                                <Gauge size={20} className="spin-animation" /> 
+                                <Gauge size={20} className="spin-animation" />
                                 Submitting...
                             </>
                         ) : (

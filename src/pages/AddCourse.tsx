@@ -1,3 +1,4 @@
+//import 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -11,23 +12,21 @@ import {
 } from 'lucide-react';
 import './AddCourse.css';
 
-// --- MODERN THEME COLORS (Original Blue/Indigo) ---
-const PRIMARY_ACCENT = '#3a25ff'; // Vibrant Indigo/Blue
+const PRIMARY_ACCENT = '#3a25ff'; 
 const GRADIENT_START = '#3a25ff';
 const GRADIENT_END = '#5a4bff';
-const LIGHT_BG = '#f7f8fa'; // Soft off-white page background
+const LIGHT_BG = '#f7f8fa'; 
 const CARD_BG = 'white';
 const TEXT_COLOR = '#2d3748';
 const BORDER_COLOR = '#e2e8f0';
 
 
 const AddCourse = () => {
-  const [user] = useAuthState(auth);
+  const [user] = useAuthState(auth);   // Get the logged-in user from Firebase
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  
-  // ⚠️ تم حذف حقل `lessons` من هنا
+  //store data of course from input
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -41,22 +40,22 @@ const AddCourse = () => {
     requirements: '',
     whatYouLearn: '',
   });
-
+//  // Stores inputs course links (videos, files, etc.)
   const [courseLinks, setCourseLinks] = useState<Array<{id: string, title: string, url: string, type: string}>>([]);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-
+// Loads the logged-in user’s data when the page opens.
   useEffect(() => {
     const fetchUserData = async () => {
-      if (user) {
+      if (user) {// If the user is NOT logged in → redirects to /signin.
         const { UserService } = await import('../firebase/src/firebaseServices');
         const data = await UserService.getUserData(user.uid);
         setUserData(data);
         setLoading(false);
-      } else {
+      } else { // If the user is logged in → gets user info from Firebase and stores it in userData.
         setLoading(false);
         navigate('/signin');
       }
@@ -64,27 +63,26 @@ const AddCourse = () => {
     fetchUserData();
   }, [user, navigate]);
 
-  // التحقق من الصلاحية بعد تحميل البيانات
   useEffect(() => {
-    if (!loading && userData && userData.role !== 'teacher') {
-      alert('ليس لديك صلاحية رفع كورسات. يجب أن تكون مُدرّسًا.');
+    if (!loading && userData && userData.role !== 'Coordinator') {
+      alert('No Permission ');
       navigate('/courses');
     }
   }, [loading, userData, navigate]);
-
+// Handles uploading the course thumbnail (image).
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setThumbnail(file);
+      setThumbnail(file);//Creates a preview URL to show the user 
       setPreviewUrl(URL.createObjectURL(file));
     }
   };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+ //Updates form inputs (title, description, price, etc.)
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => { // react. an event happend and changing due to text area input or select elemnt
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-
+// add course link 
   const addCourseLink = () => {
     const newLink = {
       id: Date.now().toString(),
@@ -108,9 +106,18 @@ const AddCourse = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    
+    // Validate that a category is selected
+    if (!formData.category || formData.category.trim() === '') {
+      setError('Please select a category for the course before saving!');
+      setSubmitting(false);
+      return;
+    }
+    
     setSubmitting(true);
     setError(null);
     try {
+      console.log(`Adding new course in category: ${formData.category}`);
       await CourseService.uploadCourse(
         {
           title: formData.title,
@@ -205,7 +212,6 @@ if (loading) {
       padding: '40px 20px', // Increased top/bottom padding
       fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
-      {/* Header with Back Button */}
       <div style={{
         maxWidth: '1200px', // Increased max width for more space
         margin: '0 auto',
@@ -246,7 +252,6 @@ if (loading) {
           <ArrowLeft size={18} />
           Back to Courses
         </button>
-        {/* Main Title Moved Here */}
         <h1 style={{ 
           fontSize: '32px', 
           fontWeight: '700', 
@@ -257,7 +262,6 @@ if (loading) {
         </h1>
       </div>
 
-      {/* Error Message */}
       {error && (
         <div style={{
           maxWidth: '1200px',
@@ -601,20 +605,16 @@ if (loading) {
                   onBlur={(e) => { e.currentTarget.style.borderColor = BORDER_COLOR; e.currentTarget.style.background = LIGHT_BG; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   <option value="">Choose Category</option>
-                  <option value="programming">Programming</option>
-                  <option value="design">Design</option>
-                  <option value="marketing">Marketing</option>
-                  <option value="business">Business</option>
+                  <option value="graphic">  Graphic Design</option>
+                  <option value="cyber">Cyber Security</option>
+                  <option value="web">Web Development</option>
                   <option value="languages">Languages</option>
-                  <option value="data-science">Data Science</option>
-                  <option value="web-development">Web Development</option>
-                  <option value="mobile-development">Mobile Development</option>
-                  <option value="ai-ml">AI & Machine Learning</option>
-                  <option value="cybersecurity">Cybersecurity</option>
+                  <option value="history">History</option>
+                  <option value="finance">Finance</option>
+                  <option value="mobile">Mobile Development</option>
+                  <option value="chemistry">Chemistry</option>
                 </select>
               </div>
-
-              {/* Difficulty */}
               <div style={{ marginBottom: '25px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '15px', color: TEXT_COLOR }}>
                   <Target size={16} style={{ marginRight: '6px', display: 'inline', verticalAlign: 'middle', color: PRIMARY_ACCENT }} />
@@ -685,26 +685,9 @@ if (loading) {
               border: `1px solid ${BORDER_COLOR}`
             }}>
               <h2 style={{ fontSize: '24px', fontWeight: '700', color: TEXT_COLOR, marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <DollarSign size={24} color={PRIMARY_ACCENT} /> Pricing & Options
+                 Pricing: Free
               </h2>
 
-              {/* Price */}
-              <div style={{ marginBottom: '25px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '15px', color: TEXT_COLOR }}>
-                  Price (USD)
-                </label>
-                <input
-                  type="text"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., 49.99 or Free"
-                  style={{ width: '100%', padding: '12px 16px', border: `1px solid ${BORDER_COLOR}`, borderRadius: '10px', fontSize: '15px', outline: 'none', transition: 'all 0.3s ease', background: LIGHT_BG, fontWeight: '500' }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = PRIMARY_ACCENT; e.currentTarget.style.background = 'white'; e.currentTarget.style.boxShadow = `0 0 0 3px ${PRIMARY_ACCENT}33`; }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = BORDER_COLOR; e.currentTarget.style.background = LIGHT_BG; e.currentTarget.style.boxShadow = 'none'; }}
-                />
-              </div>
 
               {/* Certificate */}
               <div style={{ marginBottom: '0' }}>
@@ -752,75 +735,7 @@ if (loading) {
           </div> {/* End of Right Column */}
           
           {/* Thumbnail / Upload Card (Stretching across columns, below metadata/links) */}
-          <div style={{
-            gridColumn: '1 / -1', // Span across both columns
-            background: CARD_BG,
-            borderRadius: '24px',
-            padding: '30px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-            border: `1px solid ${BORDER_COLOR}`
-          }}>
-            <h2 style={{ fontSize: '24px', fontWeight: '700', color: TEXT_COLOR, marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Image size={24} color={PRIMARY_ACCENT} /> Course Thumbnail
-            </h2>
-            
-            <input
-              type="file"
-              id="thumbnail-upload"
-              accept="image/*"
-              onChange={handleThumbnailChange}
-              style={{ display: 'none' }}
-            />
-            <label htmlFor="thumbnail-upload" style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '200px',
-              border: `2px dashed ${BORDER_COLOR}`,
-              borderRadius: '16px',
-              cursor: 'pointer',
-              background: previewUrl ? `url(${previewUrl}) center/cover no-repeat` : LIGHT_BG,
-              color: previewUrl ? 'transparent' : TEXT_COLOR,
-              transition: 'all 0.3s ease',
-              textAlign: 'center',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
-            onMouseEnter={(e) => {
-              if (!previewUrl) e.currentTarget.style.borderColor = PRIMARY_ACCENT;
-            }}
-            onMouseLeave={(e) => {
-              if (!previewUrl) e.currentTarget.style.borderColor = BORDER_COLOR;
-            }}>
-              {!previewUrl && (
-                <>
-                  <Upload size={32} style={{ marginBottom: '10px', color: PRIMARY_ACCENT }} />
-                  <span style={{ fontWeight: '600', fontSize: '16px', color: TEXT_COLOR }}>Click to upload thumbnail</span>
-                  <span style={{ fontSize: '14px', color: '#718096' }}>Recommended size: 1280x720. Max 5MB.</span>
-                </>
-              )}
-              {previewUrl && (
-                <div style={{
-                  position: 'absolute',
-                  top: 0, left: 0, right: 0, bottom: 0,
-                  background: 'rgba(0, 0, 0, 0.4)', // Dark overlay for text visibility
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: '600',
-                  fontSize: '18px',
-                  opacity: 0,
-                  transition: 'opacity 0.3s ease'
-                }}
-                >
-                  <Image size={32} style={{ marginRight: '10px' }} />
-                  Change Thumbnail
-                </div>
-              )}
-            </label>
-          </div>
+   
           
         </div> {/* End of Main Content Grid */}
 

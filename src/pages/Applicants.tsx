@@ -3,12 +3,12 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { Link, useSearchParams } from 'react-router-dom';
 import { auth, db } from '../firebase/firebaseConfig';
 import { ApplicationsService } from '../firebase/src/firebaseServices';
-import { collection, query, where, onSnapshot, doc, getDoc, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, orderBy, deleteDoc } from 'firebase/firestore';
 import { 
   Download, Eye, EyeOff, FileText, Users, TrendingUp, Calendar, 
   Filter, Search, CheckCircle2, XCircle, Clock, Star, MapPin, 
   Briefcase, Mail, Phone, Award, MessageSquare, Save, Loader2,
-  ArrowLeft, Globe, Sparkles
+  ArrowLeft, Globe, Sparkles, Trash2
 } from 'lucide-react';
 import './Applicants.css';
 
@@ -41,6 +41,9 @@ export default function Applicants() {
   const [sortBy, setSortBy] = useState<string>('appliedAt_desc');
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  
+  // New state for delete loading
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -109,6 +112,32 @@ export default function Applicants() {
 
     return () => unsub();
   }, [selectedJobId, loadJobDetails]);
+
+  // Handle Job Deletion
+  const handleDeleteJob = async () => {
+    if (!selectedJobId || !selectedJob) return;
+
+    const confirmMessage = `Are you sure you want to delete the job "${selectedJob.title}"? \n\nThis action cannot be undone.`;
+    if (!window.confirm(confirmMessage)) return;
+
+    setIsDeleting(true);
+    try {
+      // Delete the job document
+      await deleteDoc(doc(db, 'jobs', selectedJobId));
+      
+      // Reset selection
+      setSelectedJobId(null);
+      setSelectedJob(null);
+      setSearchParams({});
+      
+      // Note: The onSnapshot listener will automatically update the sidebar list
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      alert('Failed to delete job. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const stats = useMemo(() => {
     const byStatus: Record<string, number> = {};
@@ -462,7 +491,7 @@ export default function Applicants() {
         </div>
 
         <div className="apps-content card">
-          <div className="apps-content-header">
+          <div className="apps-content-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <h3 className="card-title">
                 {selectedJob?.title || 'Select a job'}
@@ -479,6 +508,25 @@ export default function Applicants() {
                 ))}
               </div>
             </div>
+            
+            {selectedJobId && (
+              <button 
+                onClick={handleDeleteJob} 
+                className="apps-btn"
+                disabled={isDeleting}
+                style={{ 
+                  backgroundColor: '#fee2e2', 
+                  color: '#ef4444', 
+                  borderColor: '#fecaca',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {isDeleting ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
+                {isDeleting ? 'Deleting...' : 'Delete Job'}
+              </button>
+            )}
           </div>
 
           <div className="apps-toolbar">

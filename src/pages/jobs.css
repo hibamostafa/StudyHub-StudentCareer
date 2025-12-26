@@ -1,257 +1,490 @@
-.backgroundimg {
-  position: absolute;
-  top: 120px;
-  left: 55%;
-  width: 550px;
-  height: 500px;
-  border-radius: 20px;
-  object-fit: cover;
-  animation: fadeInUp 0.9s ease-out, zoomIn 1s ease-out;
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
-}
-.jobsearch{
-  height: 3380px;
-}
-.titleJob1 {
-  font-family: 'Poppins', sans-serif;
-  font-size: 3.2rem;
-  font-weight: 700;
-  color: var(--text-color);
-  letter-spacing: 0.5px;
-  line-height: 1.3;
-  position: absolute;
-  left: 100px;
-  top: 220px;
-  width: 700px;
-  animation: fadeInUp 1s ease-out;
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary: #4f46e5;       /* Indigo 600 */
+  --primary-glow: rgba(79, 70, 229, 0.3);
+  --secondary: #0f172a;     /* Slate 900 */
+  --bg-color: #f8fafc;      /* Slate 50 */
+  --card-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --success: #10b981;
+  /* --radius: 16px;
+  --font-main: 'Plus Jakarta Sans', sans-serif; */
 }
 
-.highlight3 {
-  background: linear-gradient(90deg, #3a25ff, #6a5cff);
+/* --- Base Layout --- */
+.jobsbody {
+  font-family: var(--font-main);
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  margin: 0;
+  min-height: 100vh;
+  /* Subtle Dot Pattern Background */
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  background-size: 24px 24px;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem 4rem 1rem; /* Added bottom padding */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.styled-link {
+  color: white;
+  text-decoration: none;
+  font-family: 'Arial', sans-serif; /* A clean, modern font */
+  font-size: 1em; /* Make it a bit larger for impact */
+  font-weight: bold; /* Make the text bold */
+  text-shadow: 2px 2px 4px rgba(0, 0, 1, 0.5); /* A subtle black shadow */
+}
+
+.homepage{
+  height: 3450px;
+}
+
+.navbar-container2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 3rem;
+  position: fixed; /* Make it stick to the top */
+  top: 0px; /* Add some space from the top */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 40px;
+  max-width: 1500px;
+  background: var(--bg-color-transparent);
+  backdrop-filter: blur(10px); /* The "glassmorphism" effect! */
+  -webkit-backdrop-filter: blur(10px); /* For Safari support */
+  border: 1px solid var(--border-color);
+  z-index: 1000;
+  font-family: 'Inter', sans-serif;
+  width: 100vw;
+  padding: 30px 40px; /* Use less horizontal padding */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  justify-content: space-between;
+}
+.logo2{
+  position: relative;
+  left: 25px;
+  top: -5px;
+  width: 160px;
+  height: 70px;
+}
+.navbar-logo2 {
+  position: relative;
+  left: 25px;
+}
+
+.navbar-links2 {
+  display: flex;
+  list-style: none;
+  text-align: center;
+  align-items: center;
+  margin: 20px;
+  padding: 20px;
+  gap: 2rem;
+}
+/* Profile Button */
+.profile-container {
+  display: flex;
+  padding: 23px;
+  position: absolute;
+  left: 1350px;
+
+  
+}
+
+.profile-btn {
+  background: #d7d7d7; /* Primary theme color */
+  border: 3px solid #fff; /* Slightly thicker white border for elegance */
+  border-radius: 50%;
+  width: 48px; /* Slightly larger button */
+  height: 48px; /* Slightly larger button */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* More pronounced, soft shadow */
+}
+
+.profile-btn:hover {
+  transform: scale(1.08); /* Slightly less aggressive scale, more subtle */
+  background: #2d40cc; /* Darker shade on hover */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Deeper shadow on hover */
+}
+
+.profile-img {
+   width: 44px; /* Slightly larger */
+  height: 44px; /* Slightly larger */
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.8); ; /* Subtle inner white border */
+}
+
+.divider2 {
+  width: 1px;
+  height: 40px;
+  background-color: #e0e0e0; /* Lighter, more modern divider color */
+  margin: 0 15px; /* Increased margin for better spacing */
+  position: absolute; /* Keep absolute if it's truly a standalone divider */
+  /* Adjust left position based on profile-container if you changed its positioning */
+  left: 1420px; /* Keep if absolutely positioned */
+}
+
+/* Dropdown */
+.profile-dropdown {
+  position: absolute;
+  top: 60px; /* Keep consistent with button height + gap */
+  right: 0; /* Aligns dropdown to the right of its parent (profile-container) */
+  background: white;
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18); /* Enhanced shadow for a premium feel */
+  min-width: 290px; /* Slightly wider */
+  z-index: 1000;
+  overflow: hidden; /* Ensures content respects border-radius */
+  animation: slideDown 0.3s ease forwards; /* 'forwards' keeps the final state */
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-15px); /* Slightly more pronounced slide */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Increased gap */
+  padding: 17px; /* More padding */
+  background: #3a52ff; /* Theme color */
+  border-bottom: 1px solid #2d40cc; /* Darker theme shade for border */
+  color: white; /* Text color for header */
+}
+
+.profile-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: white; /* Text color for header */
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.profile-pic {
+  width: 44px; /* Slightly larger */
+  height: 44px; /* Slightly larger */
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.8); /* White border around profile pic in header */
+}
+
+.profile-dropdown ul {
+  list-style: none;
+  padding: 0;
+  margin: 0; /* Ensure no default margin from browser */
+}
+
+.profile-dropdown li {
+  padding: 12px 20px; /* More generous padding */
+  border-bottom: 1px solid #f0f4f8; /* Lighter, more modern separator */
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Increased gap for icons/text */
+  font-size: 15px; /* Slightly larger font */
+  color: #333; /* Darker text for better contrast and classic feel */
+  transition: background 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.profile-dropdown li:last-child {
+  border-bottom: none; /* No border on the last item */
+}
+
+.profile-dropdown li:hover {
+  background: #f8faff; /* Light background on hover */
+  color: #1a1a1a; /* Slightly darker text on hover */
+  cursor: pointer;
+}
+
+.profile-dropdown li span {
+  font-weight: 500;
+  color: #3a52ff; /* Theme color for highlighted text */
+}
+
+/* Assuming icon integration - add a class for your icons */
+.profile-dropdown li i {
+  color: #666; /* Neutral icon color */
+  font-size: 18px; /* Standard icon size */
+}
+
+.profile-actions {
+  padding: 15px 20px; /* More padding, matches list items horizontally */
+  display: flex;
+  gap: 10px; /* Consistent gap */
+  background: #fdfdfd; /* Very light background for action section */
+  border-top: 1px solid #eee; /* Subtle top border */
+  border-bottom-left-radius: 10px; /* Match dropdown radius */
+  border-bottom-right-radius: 10px; /* Match dropdown radius */
+}
+
+.profile-link {
+  flex: 1;
+  text-align: center;
+  padding: 10px 15px;
+  background: #3a52ff; /* Theme color for primary action */
+  color: white;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle button shadow */
+}
+
+.profile-link:hover {
+  background: #2d40cc; /* Darker shade on hover */
+  transform: translateY(-2px); /* More noticeable lift */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Deeper shadow on hover */
+}
+
+.profile-link:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.logout-btn {
+  padding: 10px 15px;
+  background: #000000;
+  color: #ffffff;
+
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  text-decoration: none;          /* remove underline */
+  outline: none;
+
+  display: inline-flex;           /* keeps button look even if it's <a> */
+  align-items: center;
+  justify-content: center;
+
+  transition: 
+    background 0.2s ease-in-out,
+    transform 0.1s ease-in-out,
+    box-shadow 0.2s ease;
+
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover */
+.logout-btn:hover {
+  background: #000000;
+  color: #ffffff;
+  text-decoration: none;          /* ensure no underline on hover */
+
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Active */
+.logout-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* If used as <a> specifically */
+.logout-btn:visited {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.nav-link-item2 { 
+  display: flex;
+  align-items: center; 
+  gap: 0.5rem;
+  color: var(--text-color);
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.5rem 0;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.nav-icon2 { 
+  flex-shrink: 0; 
+}
+
+.nav-link-item2::after { 
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--primary-color);
+  transition: width 0.3s ease;
+}
+
+.nav-link-item2:hover::after { 
+  width: 100%;
+}
+
+.nav-link-item2.active { 
+  color: var(--primary-color);
+  font-weight: 600;
+}
+/* --- Navbar Actions Container --- */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px; /* Space between the buttons */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Base Style for the Button Container */
+.signOut-button {
+  /* Box Model */
+  position: relative;
+  padding: 8px 10px;
+  border-radius: 15px; /* Slightly rounded corners */
+  cursor: pointer;
+  
+  /* Visuals */
+  background-color: transparent; /* Transparent background */
+  border: 1px solid #3a52ff; /* A standard, professional red for warnings/sign-outs */
+  transition: all 0.2s ease-in-out; /* Smooth transition for hover effects */
+}
+
+/* Style for the Link/Text inside the Button */
+.signOut-button a {
+  /* Text Style */
+  font-size: 16px;
+  font-weight: 600; /* Semi-bold */
+  color: #3a52ff; /* Match the border color */
+  text-decoration: none; /* Remove underline from the Link */
+}
+
+/* Hover Effect: Indicate Interactivity */
+.signOut-button:hover {
+  background-color: #f5f3f7; /* Very light red/pink background */
+  border-color: #3a52ff; /* Slightly darker red border */
+}
+
+.signOut-button:hover a {
+  color: #3a52ff; /* Slightly darker red text */
+}
+
+/* Active/Clicked State (Optional) */
+.signOut-button:active {
+  background-color: #f5f5f8; /* Slightly darker hover color */
+  transform: translateY(1px); /* Simple press effect */
+}
+
+
+/* --- Hero Section --- */
+.hero-header {
+  text-align: center;
+  padding: 190px 0 40px 0; /* Add top padding to clear fixed navbar */
+  width: 100%;
+  animation: fadeIn 0.8s ease-out;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  line-height: 1.1;
+  color: var(--secondary);
+}
+
+.highlight-text {
+  background: linear-gradient(135deg, var(--primary), #818cf8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.JobParagraph {
-  font-size: 1rem;
-  font-weight: 400; 
-  font-family: 'Poppins', 'Segoe UI', sans-serif;
-  color: #5c5c5c;
-  letter-spacing: 0.3px;
+.hero-desc {
+  color: var(--text-muted);
+  font-size: 1.1rem;
   max-width: 600px;
-  position: absolute;
-  left: 100px;
-  top: 60%;
-  text-align: left;
-  animation: fadeInUp 1s ease-out;
-  opacity: 0.9;
+  margin: 0 auto 2.5rem;
 }
 
-.search2 {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  position: absolute;
-  left: 90px;
-  top: 400px;
-  width: 700px;
-  font-family: 'Inter', 'Roboto', 'Segoe UI', sans-serif;
-  font-weight: 500;
-  font-size: 1rem;
-  color: #5a5858;
-  letter-spacing: 0.5px;
-  line-height: 1.4;
-  padding: 0.5rem 0.8rem;
-  animation: fadeInUp 1s ease-out;
-  transition: color 0.3s ease;
-}
-
-.search__input2 {
-  font-family: inherit;
-  font-size: 1rem;
-  background-color: transparent;
-  border: none;
-  color: #444;
-  padding: 0.7rem 1rem;
-  border-radius: 30px;
-  width: 30em;
-  transition: all 0.3s ease;
-}
-
-.search__input2:focus {
-  outline: none;
-}
-
-.search__button2 {
-  border: none;
-  background: linear-gradient(90deg, #3a25ff, #6a5cff);
-  color: #fff;
-  padding: 0.7rem 1.2rem;
-  border-radius: 30px;
-  cursor: pointer;
-  transition: transform 0.2s ease, background 0.3s ease;
-}
-
-.search__button2:hover {
-  transform: translateY(-2px);
-  background: #2a1bcc;
-}
-
-.search__icon2 {
-  height: 1.2em;
-  width: 1.2em;
-  fill: #fff;
-}
-
-/* ========== Job Cards Section - المحدث ========== */
-.filter-card {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 2rem; /* ✅ مسافة أكبر بين الكروت */
-  margin: 2.5rem 0 3rem; /* ✅ هوامش أعلى وأسفل */
-  padding: 0 1rem; /* ✅ مسافة من الجوانب */
-}
-
-.job-card {
-  background: rgba(255, 255, 255, 0.94);
-  border-radius: 16px;
-  padding: 1rem; /* ✅ مسافة داخلية أقل */
-  box-shadow: 0 5px 15px rgba(15, 23, 42, 0.1);
-  border-left: 3px solid #3b82f6;
-  transition: all 0.3s ease;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  font-family: 'Poppins', sans-serif;
-  position: relative;
-  overflow: hidden;
-  max-width: 320px; /* ✅ تحديد عرض أقصى لتجنب التمدد الزائد */
-  margin: 0 auto; /* ✅ توسيط الكروت على الشاشات الكبيرة */
-}
-
-.job-card:hover {
-  transform: translateY(-5px) scale(1.02);
-  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.16);
-  border-left-color: #2563eb;
-}
-
-.job-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 4px;
-  width: 100%;
-  background: linear-gradient(90deg, #a0c4ff, #ffc6ff, #fdffb6);
-  border-radius: 16px 16px 0 0;
-}
-
-.job-header {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
-}
-
-.job-card p {
-  font-size: 0.92rem;
-  color: #6b7280;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.job-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.job-footer p {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  color: #4b5563;
-}
-
-.apply-button {
-  background: linear-gradient(135deg, #4a6cf7, #6a8eff);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  padding: 0.6rem 1.1rem;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  outline: none;
-  box-shadow: 0 5px 12px rgba(74, 108, 247, 0.25);
-  position: relative;
-  overflow: hidden;
-  text-decoration: none;
+/* --- Toggle Switch --- */
+.mode-toggle {
+  background: #e2e8f0;
   display: inline-flex;
+  padding: 4px;
+  border-radius: 100px;
+  margin-bottom: 2rem;
+}
+
+.toggle-btn {
+  padding: 10px 24px;
+  border-radius: 100px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-family: var(--font-main);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
 }
 
-.apply-button:hover {
-  background: linear-gradient(135deg, #3a56d4, #5876e5);
-  transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 8px 20px rgba(74, 108, 247, 0.35);
+.toggle-btn.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.apply-button:active {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: 0 4px 10px rgba(74, 108, 247, 0.2);
+/* --- Filter & Search Section --- */
+.title-search-container {
+  font-family: 'Inter', sans-serif;
+  font-size: 2rem;
+  color: #212121;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1rem;
 }
-
-.apply-button::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  transition: width 0.5s ease, height 0.5s ease, opacity 0.6s ease;
-}
-
-.apply-button:active::after {
-  width: 200%;
-  height: 200%;
-  opacity: 0;
-}
-
-.job-card.blue { border-left-color: #a0c4ff; }
-.job-card.pink { border-left-color: #ffc6ff; }
-.job-card.yellow { border-left-color: #fdffb6; }
-
-/* ========== باقي الأقسام بدون تغيير (للإكمال) ========== */
 
 .filter-container {
-  max-width: 1150px;
+  width: 100%;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
-  position: relative;
-  top: 820px;
+  /* Removed absolute positioning */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .filter-title {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
   color: #2c2c2c;
-  position: absolute;
-  top: -200px;
-  left: 0px;
   font-weight: bold;
+  position: relative;
+  text-align: center;
 }
 
 .filter-title::after {
@@ -261,7 +494,7 @@
   height: 6px;
   background: linear-gradient(90deg, #c5b6ff, #3a25ff);
   border-radius: 4px;
-  margin-top: 5px;
+  margin: 5px auto 0; /* Centered */
   animation: slideIn 0.5s ease forwards;
 }
 
@@ -271,255 +504,306 @@
 }
 
 .filter-paragraph {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   color: #444;
-  width: 900px;
+  text-align: center;
+  max-width: 800px;
+  margin-bottom: 2rem;
   line-height: 1.5;
-  position: absolute;
-  top: -50px;
-  left: 0px;
-  font-family: 'Poppins', sans-serif;
-  margin: 0;
 }
 
 .filter-paragraph span {
-  padding: 2px 4px;
+  background: rgba(79, 70, 229, 0.1);
+  padding: 2px 6px;
   border-radius: 4px;
+  color: var(--primary);
   font-weight: 600;
 }
 
 .Filter-bar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  /* Creates exactly 3 columns of equal width */
+  grid-template-columns: repeat(3, 1fr); 
   gap: 1rem;
-  margin: 1rem;
+  width: 100%;
+  background: white;
+  padding: 1.5rem;
   border-radius: 18px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  margin-bottom: 3rem;
+  box-sizing: border-box;
 }
 
 .filter-input {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%; /* Ensure it fills the grid cell */
 }
 
 .filter-input input,
 .filter-input select {
   width: 100%;
-  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  padding: 0.8rem 0.8rem 0.8rem 2.5rem;
   border: 1px solid #d0d0d0;
-  border-radius: 18px;
+  border-radius: 12px;
   background: #fff;
   font-size: 0.95rem;
   transition: border 0.2s;
+  box-sizing: border-box;
+  height: 48px; /* Force consistent height */
 }
 
 .filter-input input:focus,
 .filter-input select:focus {
   border-color: #3a52ff;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(58, 82, 255, 0.1);
 }
 
 .filter-icon {
   position: absolute;
-  left: 10px;
+  left: 12px;
   color: #999;
   font-size: 1rem;
+  z-index: 1;
 }
 
 .filter-button {
-  grid-column: span 2;
-  padding: 0.75rem 1rem;
+  /* Remove the spanning and fixed width */
+  grid-column: auto; 
+  width: 100%; 
+  margin: 0;
+  
+  height: 48px; /* Match input height */
+  padding: 0 1rem;
   background: #000000;
   color: #fff;
   font-weight: 600;
   border: none;
-  border-radius: 18px;
+  border-radius: 12px;
   cursor: pointer;
   transition: background 0.3s;
-  width: 300px;
-  position: relative;
-  left: 450px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
 }
 
 .filter-button:hover {
   background: #3e3e3f;
+  transform: translateY(-2px);
 }
 
-.hirring {
-  height: 400px;
-  width: 205vh;
+/* --- Responsive Adjustments --- */
+/* On smaller screens (Tablets/s), switch to 2 columns or 1 column 
+   so the inputs don't become too squashed */
+@media (max-width: 900px) {
+  .Filter-bar {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns (3 rows) */
+  }
+}
+
+@media (max-width: 600px) {
+  .Filter-bar {
+    grid-template-columns: 1fr; /* 1 column (stack everything) */
+  }
+}
+
+.filter-button:hover {
+  background: #3e3e3f;
+  transform: translateY(-2px);
+}
+
+/* --- Job Card Grid --- */
+.filter-card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  padding-bottom: 2rem;
+}
+
+/* Specific Card Styles derived from React logic */
+.job-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  background-color: #ffffff;
-  top: 950px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-.hirreimage {
-  width: 500px;
-  height: 500px;
-  position: absolute;
-  left: 900px;
-  top: -50px;
+.job-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-.hire-head {
-  text-align: left;
-  font-family: 'Poppins', sans-serif;
-  font-size: 3.0rem;
-  color: #000000;
-  letter-spacing: 0.5px;
-  line-height: 1.3;
+/* Color accents based on index */
+.job-card.blue { border-top: 4px solid #c3d5f1; }
+.job-card.pink { border-top: 4px solid #efc1d8; }
+.job-card.yellow { border-top: 4px solid #f7edcf; }
+
+.job-header {
   margin-bottom: 1rem;
-  justify-content: left;
-  width: 700px;
-  position: absolute;
-  left: 70px;
-  top: 10px;
 }
 
-.hire-paragraph {
-  text-align: left;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 1.2rem;
-  color: #777676bc;
-  letter-spacing: -0.5px;
-  line-height: 1.3;
+.job-type {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.job-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+  color: var(--secondary);
+}
+
+.job-salary {
+  color: var(--success);
+  font-weight: 700;
+  font-size: 1.1rem;
   margin-bottom: 1rem;
-  width: 600px;
-  position: absolute;
-  left: 70px;
-  top: 150px;
 }
 
-:root {
-  --bg: #f7f6ff;
-  --card: #ffffffcc;
-  --text: #2b2b2f;
-  --muted: #6e6e77;
-  --brand: #6a5cff;
-  --brand-2: #ff8bd1;
-  --ok: #27c3a5;
-  --ring: color-mix(in oklab, var(--brand), white 25%);
-  --shadow: 0 10px 30px rgba(51, 37, 106, 0.15);
-  --radius: 20px;
+.job-footer {
+  margin-top: auto;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.job-footer p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.apply-button {
+  background: var(--primary);
+  color: white;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+  flex: 1;
+  transition: background 0.2s;
+}
+
+.apply-button:hover {
+  background: #4338ca;
+}
+
+/* --- Recruit Mode / Form --- */
+.post-form-card {
+  width: 100%;
+  animation: fadeInUp 0.5s ease-out;
 }
 
 .body-form {
-  background-color: #f4f4f4;
-  font-family: 'Poppins', sans-serif;
-  color: #2c2c33;
+  background-color: #ffffff61;
+  border-radius: 24px;
   padding: 3rem;
-  position: relative;
-  top: 1000px;
+  text-align: center;
+  /* Removed top: 1000px */
+  margin-top: 2rem;
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 .form-title-hire {
   font-family: 'Inter', sans-serif;
   font-weight: 700;
-  font-size: 3.5rem;
-  margin-bottom: 0.6rem;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
   color: #6a5cff;
-  letter-spacing: -0.5px;
-  line-height: 1.2;
 }
 
 .form-para-hire {
-  font-family: 'Inter', sans-serif;
-  font-weight: 400;
-  font-size: 1.5rem;
-  margin-bottom: 1.8rem;
+  font-size: 1.2rem;
   color: #6e6e77;
-  line-height: 1.3;
-  letter-spacing: 0.2px;
-}
-
-.hire-title {
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: 1.25rem;
-  margin: 1.5rem 0 0.8rem;
-  color: #3a3a3a;
-  letter-spacing: 0.3px;
+  margin-bottom: 2rem;
 }
 
 .hire-bar {
   background-color: #ffffff;
   border-radius: 16px;
-  padding: 1.5rem;
-  max-width: 700px;
-  margin: 0 auto 2rem;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
   display: grid;
+  grid-template-columns: 1fr;
   gap: 1rem;
+  text-align: left;
 }
 
 .hire-bar input,
 .hire-bar select {
-  width: 90%;
-  padding: 0.9rem 1rem;
+  width: 100%;
+  padding: 1rem;
   border: 1px solid #ddd;
   border-radius: 10px;
-  font-size: 0.95rem;
-  color: #333;
-  outline: none;
-  transition: border 0.2s;
+  box-sizing: border-box;
 }
 
 .hire-bar input:focus,
 .hire-bar select:focus {
   border-color: #6a5cff;
+  outline: none;
   box-shadow: 0 0 0 3px rgba(106, 92, 255, 0.15);
-}
-
-.hire-bar input::placeholder {
-  color: #aaa;
 }
 
 .hire-button {
   background-color: #6a5cff;
   color: #fff;
-  padding: 0.95rem;
+  padding: 1rem;
   border: none;
   border-radius: 50px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  margin-top: 1rem;
+  width: 100%;
+  font-size: 1rem;
 }
 
 .hire-button:hover {
   background-color: #5848e5;
-  transform: translateY(-2px);
 }
 
-.hire-button:active {
-  transform: translateY(0);
-}
-
-@media (min-width: 600px) {
+/* Responsive Grid for Form */
+@media (min-width: 768px) {
   .hire-bar {
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
   }
-
+  
   .hire-bar input[name="company"],
   .hire-bar input[name="title"],
-  .hire-bar input[name="tech"] {
-    grid-column: 1 / -1;
-  }
-
+  .hire-bar input[name="tech"],
   .hire-button {
     grid-column: 1 / -1;
   }
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

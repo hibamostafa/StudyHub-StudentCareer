@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./ai.css";
-import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
-import { Bot, User, Mic, MicOff, Paperclip, Copy, ArrowUp, Trash2, PlusSquare } from "lucide-react";
+import { Bot, User, Paperclip, Copy, ArrowUp, Trash2, PlusSquare } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -10,6 +9,7 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
 type Message = {
   text: string;
   sender: "user" | "bot";
+  image?: string; // Added image support to the message type
 };
 
 type ChatSession = {
@@ -30,10 +30,26 @@ export default function Ai() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-
-  const { transcript, listening, resetTranscript } = useSpeechRecognition();
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+const handleOpenFiles = () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.multiple = true;
+  
+  input.onchange = (e: Event) => {
+    const target = e.target as HTMLInputElement | null; // cast to HTMLInputElement
+    if (!target) return; // safety check
+
+    const files = target.files;
+    if (files) {
+      console.log(files); // handle your files here
+    }
+  };
+
+  input.click();
+};
 
   // Load chat history from localStorage
   useEffect(() => {
@@ -83,18 +99,7 @@ export default function Ai() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // Update input with transcript
-  useEffect(() => {
-    setInput(transcript);
-  }, [transcript]);
 
-  // Restore mic state
-  useEffect(() => {
-    const micState = localStorage.getItem("micEnabled");
-    if (micState === "true" && !listening) {
-      SpeechRecognition.startListening({ continuous: true });
-    }
-  }, [listening]);
 
   // Handle send message
   const handleSend = async (textToSend?: string): Promise<void> => {
@@ -103,7 +108,6 @@ export default function Ai() {
 
     const userMessage: Message = { text: messageText, sender: "user" };
     setInput("");
-    resetTranscript();
     setIsTyping(true);
 
     let chatId = activeChatId;
@@ -125,9 +129,8 @@ export default function Ai() {
     }
 
     try {
-      // Send message to Gemini API
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -174,6 +177,12 @@ export default function Ai() {
     }
   };
 
+  const handleOpenImages = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   // Handle file change
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
@@ -181,19 +190,23 @@ export default function Ai() {
 
     const reader = new FileReader();
     reader.onload = () => {
-      const base64 = reader.result?.toString().split(",")[1];
-      if (base64) {
-        handleSendWithImage(base64, file.type, input);
+      const result = reader.result?.toString();
+      if (result) {
+        const base64 = result.split(",")[1];
+        handleSendWithImage(base64, file.type, input, result); // Pass full dataUrl for rendering
       }
     };
     reader.readAsDataURL(file);
   };
 
-  // Handle send with image
-  const handleSendWithImage = async (base64Image: string, mimeType: string, text: string) => {
-    const userMessage: Message = { text: text || "Sent an image", sender: "user" };
+  const handleSendWithImage = async (base64Image: string, mimeType: string, text: string, fullDataUrl: string) => {
+    const userMessage: Message = { 
+        text: text || "Sent an image", 
+        sender: "user", 
+        image: fullDataUrl 
+    };
+    
     setInput("");
-    resetTranscript();
     setIsTyping(true);
 
     let chatId = activeChatId;
@@ -216,7 +229,7 @@ export default function Ai() {
 
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -271,7 +284,6 @@ export default function Ai() {
     }
   };
 
-  // Handle new chat
   const handleNewChat = () => {
     setActiveChatId(null);
     setMessages([]);
@@ -293,18 +305,7 @@ export default function Ai() {
     }
   };
 
-  const handleVoiceToggle = (): void => {
-    if (listening) {
-      SpeechRecognition.stopListening();
-      localStorage.setItem("micEnabled", "false");
-    } else {
-      resetTranscript();
-      SpeechRecognition.startListening({ continuous: true });
-      localStorage.setItem("micEnabled", "true");
-    }
-  };
 
-  const handleAttachClick = (): void => fileInputRef.current?.click();
 
   return (
     <div className="app-container">
@@ -378,7 +379,17 @@ export default function Ai() {
               )}
               <div className="message-content">
                 {msg.sender === "user" ? (
-                  <div className="user-bubble">{msg.text}</div>
+                  <div className="user-bubble">
+                    {/* Display the image if it exists in the message */}
+                    {msg.image && (
+                      <img 
+                        src={msg.image} 
+                        alt="Uploaded content" 
+                        style={{ maxWidth: "100%", borderRadius: "8px", marginBottom: "8px", display: "block" }} 
+                      />
+                    )}
+                    {msg.text}
+                  </div>
                 ) : (
                   <div className="bot-bubble">
                     <ReactMarkdown
@@ -463,9 +474,42 @@ export default function Ai() {
 
         <footer className="chat-input-area">
           <div className="input-wrapper">
-            <button className="icon-btn" title="Attach File" onClick={handleAttachClick}>
-              <Paperclip size={20} />
+            <button
+              className="icon-btn"
+              onClick={() => setShowAttachMenu(!showAttachMenu)}
+              title="Attach"
+            >
+              <PlusSquare size={20} />
             </button>
+{showAttachMenu && (
+  <div className="attach-menu">
+    {/* Add photos option */}
+    <button
+      className="attach-item"
+      onClick={() => {
+        handleOpenImages();
+        setShowAttachMenu(false);
+      }}
+    >
+      <Paperclip size={16} />
+      <span>Add photos</span>
+    </button>
+
+    {/* Add files option */}
+    <button
+      className="attach-item"
+      onClick={() => {
+        handleOpenFiles(); // create this function for handling files
+        setShowAttachMenu(false);
+      }}
+    >
+      <Paperclip size={16} />
+      <span>Add files</span>
+    </button>
+  </div>
+)}
+
+
             <input
               type="file"
               ref={fileInputRef}
@@ -473,13 +517,9 @@ export default function Ai() {
               accept="image/*"
               style={{ display: "none" }}
             />
-            <button
-              onClick={handleVoiceToggle}
-              className={`icon-btn mic-btn ${listening ? "listening" : ""}`}
-              title="Voice Input"
-            >
-              {listening ? <MicOff size={20} /> : <Mic size={20} />}
-            </button>
+
+            
+
             <input
               type="text"
               placeholder="Ask me anything..."
@@ -492,7 +532,10 @@ export default function Ai() {
                 }
               }}
             />
-            <button onClick={() => handleSend()} className="icon-btn send-btn" title="Send Message">
+            <button
+              onClick={() => handleSend()}
+              className="icon-btn send-btn"
+            >
               <ArrowUp size={20} />
             </button>
           </div>

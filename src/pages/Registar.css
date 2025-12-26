@@ -20,6 +20,9 @@ body {
 
 /* --- MAIN LAYOUT CONTAINER --- */
 .auth-container {
+    height: 100%;
+ 
+  overflow-y: hidden !important;
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100vh;
@@ -56,22 +59,25 @@ body {
 
 .auth-illustration {
   width: 100%;
-  max-width: 400px;
+  height: min-content;
+  max-width: 200px;
   height: auto;
 }
 
 /* --- RIGHT FORM PANEL --- */
 .form-panel {
   display: flex;
+  top: 100px;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
+  padding: 2.5rem;
   background-color: var(--panel-background);
+  height:min-content;
 }
 
 .auth-form {
   width: 100%;
-  max-width: 400px;
+  max-width: 300px;
   display: flex;
   flex-direction: column;
 }

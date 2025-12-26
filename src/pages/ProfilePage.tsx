@@ -1,50 +1,49 @@
 import { useState, useEffect } from 'react';
 import {
-  User, Briefcase, GraduationCap, Camera, Edit3, Download, Share2, Plus,
-  CheckCircle, Clock, X, Target, Award, Users, Calendar, ExternalLink,
-  Mail, MapPin, Phone, TrendingUp, Star, BookOpen, Save, AlertCircle,
-  Eye, Heart, MessageCircle, Settings, Shield, Bell, Filter, Search,
-  Grid, List, BarChart3, PieChart, FileText, Upload, Link2, Copy
+  User, Briefcase, GraduationCap, Camera, Edit3, Share2, Plus,
+  CheckCircle, Clock, X, Award, 
+  Mail, Phone, BookOpen, Save, AlertCircle,
+  MessageSquare, Upload, MapPin, Zap,
+  ArrowUp, Minus, Calendar, Globe, FileText, ChevronRight,
+  TrendingUp, MoreHorizontal
 } from 'lucide-react';
 import { auth, db } from '../firebase/firebaseConfig';
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
-import { MessageSquare } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
-import { Link } from 'react-router-dom';
-
+import { NavLink, Link } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { UserService } from '../firebase/src/firebaseServices';
+import { FaUser } from 'react-icons/fa';
+import React, { useRef } from 'react';
+import {  Download } from 'lucide-react';
+// --- 1. Helper Function: Resize & Convert ---
 
-import {
-  FaInstagram,
-  FaFacebookF,
-  FaTwitter,
-  FaYoutube,
-  FaUser,
-  FaBriefcase,
-  FaBook,
-  FaFileDownload,
-  FaPencilAlt,
-  FaSignOutAlt,
-} from 'react-icons/fa';
-
-
-// Interfaces
+// --- Interfaces ---
 interface UserData {
-  skills: string[];
+  id: string;
   uid: string;
-  displayName: string;
   email: string;
+  displayName?: string;
+  firstName?: string;
+  lastName?: string;
+  role?: 'Participant' | 'Coordinator';
   phone?: string;
   location?: string;
   photoURL?: string | null;
   bio?: string;
   company?: string;
+  
+  // Stats
   appliedJobs?: number;
-  connections?: number;
   coursesEnrolled?: number;
+  coursesCreated?: number;
   cvUploaded?: boolean;
+  cvUploads?: number;
+  
+  createdCoursesList?: any[]; 
+    skills: string[];
+  registeredCourses?: any[];
+  appliedJobsList?: any[];
+  interestedJobs?: any[];
   createdAt?: any;
 }
 
@@ -59,26 +58,85 @@ interface Job {
   remote: string;
   timestamp: any;
 }
+const resizeAndConvertToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 300; 
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
 
-interface Application {
-  jobId: string;
-  jobTitle: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  coverLetter: string;
-  cvFileBase64: string;
-  cvFileName: string;
-  appliedAt: any;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+const ProfileUpload = () => {
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadClick = () => {
+    // Triggers the hidden file input
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFile = event.target.files?.[0];
+    if (uploadedFile) {
+      setFile(uploadedFile);
+      // Logic to save to your profile/database would go here
+      console.log("File uploaded:", uploadedFile.name);
+    }
+  };
+
+  const handleDownload = () => {
+    // Logic to download the saved file
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = file.name;
+    link.click();
+  };
 }
+// --- 1.1 Helper: Get deterministic color/level ---
+const getSkillAttributes = (skillName: string) => {
+  let hash = 0;
+  for (let i = 0; i < skillName.length; i++) {
+    hash = skillName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  const levels = ['Intermediate', 'Advanced', 'Expert', 'Pro'];
+  const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899'];
+  
+  const levelIndex = Math.abs(hash) % levels.length;
+  const colorIndex = Math.abs(hash) % colors.length;
 
+  return {
+    level: levels[levelIndex],
+    color: colors[colorIndex]
+  };
+};
 
+// --- Helper Components ---
 const formatDate = (date: any) => {
   if (!date) return '';
   const d = date.toDate ? date.toDate() : new Date(date);
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 };
-
 
 const LoadingSpinner = () => (
   <div style={styles.loadingContainer}>
@@ -90,46 +148,82 @@ const LoadingSpinner = () => (
   </div>
 );
 
-
-const StatCard = ({ icon, title, value, change, color }: any) => (
-  <div style={{ ...styles.statCard, boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)' }}>
-    <div style={styles.statContent}>
-      <h3 style={styles.statTitle}>{title}</h3>
-      <p style={styles.statValue}>{value.toLocaleString()}</p>
-      {change && (
-        <div style={styles.change}>
-          <TrendingUp size={14} style={{ color: '#10b981' }} />
-          <span style={styles.changeText}>+{change}%</span>
+// --- MODERN STATCARD COMPONENT ---
+const StatCard = ({ icon, title, value, change, suffix = "%", color, subLabel }: any) => {
+  const isZero = !change || change === 0 || change === "0";
+  return (
+    <div style={styles.modernStatCard}>
+      <div style={styles.statTopRow}>
+        <div style={{...styles.statIconBox, backgroundColor: `${color}15`, color: color}}>
+          {icon}
         </div>
-      )}
+        {/* Trend Pill */}
+        <div style={{
+           ...styles.trendPill, 
+           backgroundColor: isZero ? "#f3f4f6" : `${color}10`,
+           color: isZero ? "#9ca3af" : color
+        }}>
+           {isZero ? <Minus size={12} strokeWidth={3} /> : <TrendingUp size={12} strokeWidth={3} />}
+           <span>{!isZero && "+"}{change}{!isZero && suffix}</span>
+        </div>
+      </div>
+      
+      <div style={styles.statContent}>
+        <p style={styles.statTitle}>{title}</p>
+        <h3 style={styles.statValue}>{value?.toLocaleString() || 0}</h3>
+        {subLabel && <p style={styles.statSubLabel}>{subLabel}</p>}
+      </div>
     </div>
-    <div style={{ ...styles.iconBox, background: color || '#3b82f6' }}>
-      {icon}
+  );
+};
+
+// --- SKILLTAG COMPONENT ---
+const SkillTag = ({ skill, onRemove, isEditing }: any) => {
+  const { level, color } = getSkillAttributes(skill);
+
+  return (
+    <div style={styles.skillCard}>
+      <div style={{...styles.skillColorStrip, backgroundColor: color}}></div>
+      <div style={styles.skillInfo}>
+        <div style={styles.skillHeader}>
+          <span style={styles.skillName}>{skill}</span>
+          {isEditing && onRemove && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onRemove(); }} 
+              style={styles.deleteSkillBtn}
+              title="Remove Skill"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <div style={styles.skillMeta}>
+          <div style={{...styles.skillDot, backgroundColor: color}}></div>
+          <span style={{...styles.skillLevelText, color: color}}>{level}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- MODERN TIMELINE ITEM ---
+const TimelineItem = ({ title, subtitle, date, icon, color, isLast }: any) => (
+  <div style={styles.timelineItem}>
+    <div style={styles.timelineLeft}>
+      <div style={{...styles.timelineIconCircle, backgroundColor: color}}>
+        {icon}
+      </div>
+      {!isLast && <div style={styles.timelineLine}></div>}
+    </div>
+    <div style={styles.timelineContent}>
+      <div style={styles.timelineHeader}>
+        <h4 style={styles.timelineTitle}>{title}</h4>
+        <span style={styles.timelineDate}>{date}</span>
+      </div>
+      <p style={styles.timelineSubtitle}>{subtitle}</p>
     </div>
   </div>
 );
-
-
-const SkillTag = ({ skill, level, onRemove, isEditing }: any) => (
-  <div style={styles.skillTagWrapper}>
-    <span style={{
-      ...styles.skillTag,
-      background: level === 'Expert' ? 'linear-gradient(90deg, #f59e0b, #d97706)' :
-                  level === 'Advanced' ? 'linear-gradient(90deg, #10b981, #059669)' :
-                  level === 'Intermediate' ? 'linear-gradient(90deg, #3b82f6, #2563eb)' :
-                  'linear-gradient(90deg, #6b7280, #4b5563)'
-    }}>
-      {skill}
-      <span style={styles.skillLevel}>{level}</span>
-      {isEditing && onRemove && (
-        <button onClick={(e) => { e.stopPropagation(); onRemove(); }} style={styles.removeBtn} title='btn'>
-          <X size={12} />
-        </button>
-      )}
-    </span>
-  </div>
-);
-
 
 const Modal = ({ isOpen, onClose, title, children, size = 'md' }: any) => {
   if (!isOpen) return null;
@@ -154,7 +248,6 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }: any) => {
   );
 };
 
-
 const ProfileStrengthIndicator = ({ strength }: { strength: number }) => (
   <div style={styles.strengthContainer}>
     <div style={styles.strengthHeader}>
@@ -164,40 +257,52 @@ const ProfileStrengthIndicator = ({ strength }: { strength: number }) => (
     <div style={styles.strengthBar}>
       <div 
         style={{
-          ...styles.strengthFill,
-          width: `${strength}%`,
-          background: strength >= 80 ? '#10b981' : strength >= 60 ? '#f59e0b' : '#ef4444'
-        }}
+  ...styles.strengthFill,
+  width: `${strength}%`,
+  background:
+    strength >= 80
+      ? '#10b940ff'   // strong → green
+      : strength >= 60
+      ? '#faf44eff'   // medium → yellow
+      : '#db6740ff',  // weak → red
+}}
+
       ></div>
     </div>
-    <p style={styles.strengthTip}>
-      {strength < 60 ? 'Add more skills and experience to improve your profile' :
-       strength < 80 ? 'Great! Add certifications to reach 100%' :
-       'Excellent profile! You\'re all set'}
-    </p>
   </div>
 );
 
-
+// --- MAIN COMPONENT ---
 function ProfilePage() {
+  const [user] = useAuthState(auth);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  
+  // State
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  
+  // UI State
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [editData, setEditData] = useState<Partial<UserData>>({});
   const [showAddSkillModal, setShowAddSkillModal] = useState(false);
-  const [newSkill, setNewSkill] = useState('');
-  const [skillLevel, setSkillLevel] = useState('Beginner');
-  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
-
-   const [user] = useAuthState(auth);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false); 
 
+  // Form Data State
+  const [editData, setEditData] = useState<Partial<UserData>>({});
+  const [newSkill, setNewSkill] = useState('');
+  
+  // Lists
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+  const [appliedJobsList, setAppliedJobsList] = useState<Job[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
+  // 1. Fetch User Data
   useEffect(() => {
     const loadUserData = async () => {
       if (!user) {
@@ -209,7 +314,6 @@ function ProfilePage() {
 
       try {
         setLoading(true);
-        // ✅ تحديث الإحصائيات بناءً على البيانات الحقيقية
         await UserService.updateUserStats(user.uid);
         
         const userRef = doc(db, 'users', user.uid);
@@ -218,7 +322,6 @@ function ProfilePage() {
           const data = userSnap.data();
           setUserData({ ...data, uid: user.uid } as UserData);
           setEditData({ ...data });
-          // تحميل الكورسات المسجلة
           setEnrolledCourses(data.registeredCourses || []);
           setError(null);
         } else {
@@ -235,80 +338,17 @@ function ProfilePage() {
     loadUserData();
   }, [user]);
 
- 
-  const handleSave = async () => {
-    if (!userData || !editData) return;
-    try {
-      const userRef = doc(db, 'users', userData.uid);
-      await updateDoc(userRef, editData as any);
-      setUserData({ ...userData, ...editData });
-      setIsEditing(false);
-      setSuccess('Profile updated successfully!');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setError('Failed to save changes');
-    }
-  };
-
-
-  const handleImageUpload = async (file: File) => {
-   
-    const reader = new FileReader();
-    reader.onload = () => {
-      setUserData(prev => prev ? { ...prev, photoURL: reader.result as string } : null);
-      setShowUploadModal(false);
-      setSuccess('Profile picture updated!');
-      setTimeout(() => setSuccess(null), 3000);
-    };
-    reader.readAsDataURL(file);
-  };
-
- 
-  const handleAddSkill = () => {
-    if (!userData || !newSkill.trim()) return;
-    const updatedSkills = [...(userData.skills || []), newSkill.trim()];
-    setUserData({ ...userData, skills: updatedSkills });
-    setNewSkill('');
-    setShowAddSkillModal(false);
-    setSuccess('Skill added successfully!');
-    setTimeout(() => setSuccess(null), 3000);
-  };
-
-  
-  const handleRemoveSkill = (skill: string) => {
-    const updatedSkills = userData?.skills?.filter(s => s !== skill) || [];
-    setUserData({ ...userData!, skills: updatedSkills });
-    setSuccess('Skill removed!');
-    setTimeout(() => setSuccess(null), 3000);
-  };
-
-  
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setSuccess('Profile link copied to clipboard!');
-    setTimeout(() => setSuccess(null), 3000);
-    setShowShareModal(false);
-  };
-
-  
-  const [appliedJobsList, setAppliedJobsList] = useState<Job[]>([]);
+  // 2. Fetch Jobs & Build Activity Timeline
   useEffect(() => {
     if (!userData || !user) return;
     const fetchAppliedJobs = async () => {
       try {
-        // ✅ جلب الطلبات الحقيقية التي قدم عليها المستخدم
         const applicationsQuery = query(
           collection(db, 'applications'),
           where('userId', '==', user.uid)
         );
         const applicationsSnapshot = await getDocs(applicationsQuery);
         
-        if (applicationsSnapshot.empty) {
-          setAppliedJobsList([]);
-          return;
-        }
-
-        // ✅ جلب معلومات الوظائف من collection jobs
         const jobIds = applicationsSnapshot.docs.map(doc => doc.data().jobId).filter(Boolean);
         const jobsData: Job[] = [];
 
@@ -340,112 +380,198 @@ function ProfilePage() {
           }
         }
 
-        jobsData.sort((a, b) => {
-          const dateA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-          const dateB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+        // Combine Jobs and Courses for "Recent Activity"
+        const combinedActivity = [
+          ...jobsData.map(job => ({
+            type: 'job',
+            title: `Applied to ${job.title}`,
+            subtitle: job.company,
+            date: job.timestamp,
+            icon: <Briefcase size={14} color="white" />,
+            color: '#3b82f6'
+          })),
+          ...(userData.registeredCourses || []).map((course: any) => ({
+            type: 'course',
+            title: `Enrolled in ${course.title}`,
+            subtitle: 'Learning in progress',
+            date: new Date(), // Fallback if no date in course
+            icon: <BookOpen size={14} color="white" />,
+            color: '#10b981'
+          }))
+        ];
+
+        // Sort by date desc
+        combinedActivity.sort((a, b) => {
+          const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+          const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
           return dateB.getTime() - dateA.getTime();
         });
 
+        setRecentActivity(combinedActivity.slice(0, 5)); // Top 5
         setAppliedJobsList(jobsData);
       } catch (error) {
         console.error('Error fetching applied jobs:', error);
-        setAppliedJobsList([]);
       }
     };
     fetchAppliedJobs();
   }, [userData, user]);
 
+  // 3. Handle Profile Picture Upload
+  const handleImageUpload = async (file: File) => {
+    if (!file || !user) return;
+    
+    setIsUploading(true);
+    try {
+      const base64String = await resizeAndConvertToBase64(file);
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, { photoURL: base64String });
+
+      setUserData((prev) => (prev ? { ...prev, photoURL: base64String } : null));
+      setSuccess('Profile picture updated!');
+      setShowUploadModal(false);
+      setTimeout(() => setSuccess(null), 3000);
+
+    } catch (error) {
+      console.error("Failed to upload image:", error);
+      setError("Image too large or invalid format.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // 4. Other Handlers
+  const handleSave = async () => {
+    if (!userData || !editData) return;
+    try {
+      const userRef = doc(db, 'users', userData.uid);
+      await updateDoc(userRef, editData as any);
+      setUserData({ ...userData, ...editData });
+      setIsEditing(false);
+      setSuccess('Profile updated successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError('Failed to save changes');
+    }
+  };
+
+  const handleAddSkill = () => {
+    if (!userData || !newSkill.trim()) return;
+    if (userData.skills?.includes(newSkill.trim())) {
+      setError('Skill already added!');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    const updatedSkills = [...(userData.skills || []), newSkill.trim()];
+    setUserData({ ...userData, skills: updatedSkills });
+    updateDoc(doc(db, 'users', userData.uid), { skills: updatedSkills });
+    setNewSkill('');
+    setShowAddSkillModal(false);
+    setSuccess('Skill added successfully!');
+    setTimeout(() => setSuccess(null), 3000);
+  };
+
+  const handleRemoveSkill = (skill: string) => {
+    if (!userData) return;
+    const updatedSkills = userData.skills?.filter(s => s !== skill) || [];
+    setUserData({ ...userData, skills: updatedSkills });
+    updateDoc(doc(db, 'users', userData.uid), { skills: updatedSkills });
+    setSuccess('Skill removed!');
+    setTimeout(() => setSuccess(null), 3000);
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setSuccess('Profile link copied to clipboard!');
+    setTimeout(() => setSuccess(null), 3000);
+    setShowShareModal(false);
+  };
+
+  const handleDownload = () => {
+    // Logic to download the saved file
+    if (!fileInputRef.current?.files?.[0]) return;
+    const file = fileInputRef.current.files[0];
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = file.name;
+    link.click();
+  };
+
+  // --- RENDER ---
   if (loading) return <LoadingSpinner />;
+  
   if (!user) {
     return (
       <div style={styles.container}>
         <div style={styles.center}>
           <h2>Please log in to view profile</h2>
-          <p>You need to be logged in to access your profile page.</p>
-          <Link to="/signin" style={{ 
-            display: 'inline-block', 
-            marginTop: '20px', 
-            padding: '12px 24px', 
-            background: '#3a25ff', 
-            color: 'white', 
-            borderRadius: '8px', 
-            textDecoration: 'none',
-            fontWeight: 600
-          }}>
+          <Link to="/signin" style={styles.primaryBtnLink}>
             Go to Sign In
           </Link>
         </div>
       </div>
     );
   }
-  if (!userData) {
-    return <LoadingSpinner />;
-  }
+
+  if (!userData) return <LoadingSpinner />;
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFile = event.target.files?.[0];
+    if (uploadedFile) {
+      setFile(uploadedFile);
+      handleImageUpload(uploadedFile);
+    }
+  };
+
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
   return (
     <div style={styles.container}>
-         
-
-  <nav className="navbar-container2">
-         <div className="navbar-logo2">
-  <img src="src/assets/img/logo2.png" className="logo2" alt="Logo" />
-</div>
-
-<ul className="navbar-links2">
-  <li>
-    <NavLink
-      to="/courses"
-      className={({ isActive }) => `nav-link-item2 ${isActive ? 'active' : ''}`}
-    >
-      <BookOpen size={20} className="nav-icon2" /> Course
-    </NavLink>
-  </li>
-  <li>
-    <NavLink
-      to="/jobs"
-      className={({ isActive }) => `nav-link-item2 ${isActive ? 'active' : ''}`}
-    >
-      <Briefcase size={20} className="nav-icon2" /> Jobs
-    </NavLink>
-  </li>
-  <li>
-    <NavLink
-      to="/ai"
-      className={({ isActive }) =>
-        `nav-link-item2 chatbot-link2 ${isActive ? 'active' : ''}`
-      }
-    >
-      <MessageSquare size={20} className="nav-icon2" /> Chatbot AI
-    </NavLink>
-  </li>
-</ul>
-
-
+      
+      {/* NAVIGATION */}
+      <nav className="navbar-container2">
+        <div className="navbar-logo2">
+          <img src="src/assets/img/logo2.png" className="logo2" alt="Logo" />
+        </div>
+        <ul className="navbar-links2">
+          <li>
+            <NavLink to="/courses" className={({ isActive }) => `nav-link-item2 ${isActive ? 'active' : ''}`}>
+              <BookOpen size={20} className="nav-icon2" /> Course
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/jobs" className={({ isActive }) => `nav-link-item2 ${isActive ? 'active' : ''}`}>
+              <Briefcase size={20} className="nav-icon2" /> Jobs
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/ai" className={({ isActive }) => `nav-link-item2 chatbot-link2 ${isActive ? 'active' : ''}`}>
+              <MessageSquare size={20} className="nav-icon2" /> Chatbot AI
+            </NavLink>
+          </li>
+        </ul>
         <div className="profile-container">
-            <button
-              className="profile-btn"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-            >
-              {userData?.photoURL ? (
-                <img src={userData.photoURL} alt="Profile" className="profile-img" />
-              ) : (
-                <FaUser size={24} color="#fff" />
-              )}
-            </button>
+          <button className="profile-btn" onClick={() => setDropdownOpen(!dropdownOpen)}>
+            {userData?.photoURL ? (
+              <img src={userData.photoURL} alt="Profile" className="profile-img" />
+            ) : (
+              <FaUser size={24} color="#fff" />
+            )}
+          </button>
+        </div>
+        <div className="divider2"></div>
+        <div className="navbar-actions">
+          <button className="signOut-button">
+            <Link to="/signin">Sign Out</Link>
+          </button>
+        </div>
+      </nav>
 
-          
-          </div>
-  <div className="divider2"></div>
-
-
-          <div className="navbar-actions">
-            <button className="login-button">Log In</button>
-            <button className="signup-button">Sign Up</button>
-          </div>
-
-
-        </nav>        
-
+      {/* ALERTS */}
       {success && (
         <div style={{ ...styles.alert, background: '#10b981' }}>
           <CheckCircle size={16} /> {success}
@@ -457,7 +583,7 @@ function ProfilePage() {
         </div>
       )}
 
-      
+      {/* HERO SECTION */}
       <div style={styles.hero}>
         <div style={styles.heroContent}>
           <div style={styles.profileHeader}>
@@ -473,13 +599,15 @@ function ProfilePage() {
             </div>
             <div style={styles.profileInfo}>
               <div style={styles.nameSection}>
-                <h1 style={styles.name}>{userData?.displayName || 'User'}</h1>
-                <p style={styles.title}>{userData?.company || ''}</p>
-                <div style={styles.stats}>
-                  {/* <span><MapPin size={14} /> {userData.location}</span> */}
-                  <span><Users size={14} /> {userData.connections || 0} connections</span>
-                  <span><Eye size={14} /> {appliedJobsList.length || userData.appliedJobs || 0} applications</span>
+                <h1 style={styles.name}> 
+                  {userData?.firstName && userData?.lastName
+                    ? `${userData.firstName} ${userData.lastName}`
+                    : userData.displayName || 'User'}
+                </h1>
+                <div style={styles.roleTag}>
+                    <User size={12} /> {userData?.role}
                 </div>
+                <p style={styles.title}>{userData?.company || 'Aspiring Professional'}</p>
                 <ProfileStrengthIndicator strength={appliedJobsList.length > 0 ? Math.min(100, appliedJobsList.length * 10) : (userData?.appliedJobs ? Math.min(100, userData.appliedJobs * 5) : 0)} />
               </div>
             </div>
@@ -510,198 +638,313 @@ function ProfilePage() {
         </div>
       </div>
 
-     
+      {/* MAIN CONTENT / STATS */}
       <div style={styles.main}>
-        {/* Stats */}
+        
+        {/* Modern Stats Grid */}
         <div style={styles.statsGrid}>
+          {/* 1. Applications */}
           <StatCard
-            icon={<Briefcase size={32} color="white" />}
-            title="Applications"
+            icon={<Briefcase size={22} />}
+            title="Total Applications"
             value={appliedJobsList.length}
-            change={appliedJobsList.length > 0 ? "100" : "0"}
-            color=" #3b82f6"
+            color="#3b82f6" // Blue
+            change={appliedJobsList.length > 0 ? (10 + appliedJobsList.length * 2) : 0}
+            subLabel="Active Opportunities"
           />
+
+          {/* 2. Courses Enrolled */}
+            <StatCard
+            icon={<GraduationCap size={22} />}
+            title={userData?.role === 'Coordinator' ? 'Courses Created' : 'Courses Enrolled'}
+            value={
+              userData?.role === 'Coordinator' 
+              ?  1
+              : userData.coursesEnrolled || enrolledCourses.length || 0
+            }
+            color="#10b981" // Emerald
+            change={
+              userData?.role === 'Coordinator'
+              ? (userData.coursesCreated || 0) > 0
+                ? Number(((userData.coursesCreated || 0) * 5.5).toFixed(1))
+                : 0
+              : (userData.coursesEnrolled || enrolledCourses.length) > 0
+                ? Number(((userData.coursesEnrolled || enrolledCourses.length) * 5.5).toFixed(1))
+                : 0
+            }
+            subLabel={userData?.role === 'Coordinator' ? 'Courses Published' : 'Skills Gained'}
+            />
+
+          {/* 3. Skills */}
           <StatCard
-            icon={<GraduationCap size={32} color="white" />}
-            title="Courses Enrolled"
-            value={userData.coursesEnrolled || enrolledCourses.length || 0}
-            change={enrolledCourses.length > 0 ? "100" : "0"}
-            color="#10b981"
-          />
-          <StatCard
-            icon={<CheckCircle size={32} color="white" />}
-            title="CV Uploads"
-            value={(userData as any)?.cvUploads || appliedJobsList.length || 0}
-            change={(userData as any)?.cvUploads || appliedJobsList.length ? "100" : "0"}
-            color=" #8b5cf6"
+            icon={<Zap size={22} />}
+            title="Skill Proficiency"
+            value={userData?.skills?.length || 0}
+            color="#8b5cf6" // Violet
+            change={
+              userData?.skills?.length > 0
+                ? Math.ceil(userData.skills.length / 4)
+                : 0
+            }
+            suffix=" New"
+            subLabel="Technologies Mastered"
           />
         </div>
 
+        {/* Tabs */}
         <div style={styles.tabsContainer}>
-  <div style={styles.tabs}>
-    {[
-      { key: 'overview', label: 'Overview', icon: <User size={16} /> },
-      { key: 'courses', label: 'My Courses', icon: <BookOpen size={16} /> },
-      { key: 'jobs', label: 'Jobs', icon: <Briefcase size={16} /> },
-      { key: 'skills', label: 'Skills', icon: <Award size={16} /> },
-    ].map(tab => (
-      <button
-        key={tab.key}
-        onClick={() => setActiveTab(tab.key)}
-        style={{
-          ...styles.tab,
-          ...(activeTab === tab.key ? styles.activeTab : styles.inactiveTab),
-        }}
-      >
-        {tab.icon} {tab.label}
-      </button>
-    ))}
-  </div>
-</div>
+          <div style={styles.tabs}>
+            {[
+              { key: 'overview', label: 'Overview', icon: <User size={16} /> },
+              // { key: 'courses', label: 'My Courses', icon: <BookOpen size={16} /> },
+              { key: 'jobs', label: 'Jobs', icon: <Briefcase size={16} /> },
+              { key: 'skills', label: 'Skills', icon: <Award size={16} /> },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  ...styles.tab,
+                  ...(activeTab === tab.key ? styles.activeTab : styles.inactiveTab),
+                }}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
         
+        {/* Tab Content */}
         <div style={styles.tabContent}>
+          
+          {/* --- MODERN PROFESSIONAL OVERVIEW TAB --- */}
           {activeTab === 'overview' && (
             <div style={styles.overviewGrid}>
+              
+              {/* Left Column: Bio & Activity */}
               <div style={styles.overviewLeft}>
-                <div style={styles.contactSection}>
-                  <h2 style={styles.sectionTitle}>Contact Information</h2>
-                  <div style={styles.contactGrid}>
-                    <div style={styles.contactItem}>
-                      <Mail size={20} style={{ color: '#3b82f6' }} />
-                      <div>
-                        <span style={styles.contactLabel}>Email</span>
-                        <span style={styles.contactValue}>{userData.email}</span>
-                      </div>
-                    </div>
-                    <div style={styles.contactItem}>
-                      <Phone size={20} style={{ color: '#10b981' }} />
-                      <div>
-                        <span style={styles.contactLabel}>Phone</span>
-                        <span style={styles.contactValue}>{userData.phone || 'Not available'}</span>
-                      </div>
-                    </div>
+                
+                {/* About Me Section (Clean Card) */}
+                <div style={styles.contentCard}>
+                  <div style={styles.cardHeader}>
+                    <h3 style={styles.cardTitle}>About Me</h3>
+                    {isEditing && <span style={styles.badge}>Editing Mode</span>}
                   </div>
-                </div>
-                <div style={styles.bioSection}>
-                  <h3 style={styles.sectionTitle}>About Me</h3>
                   {isEditing ? (
                     <textarea
                       value={editData.bio || ''}
                       onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
                       style={styles.textarea}
-                      placeholder="Tell us about yourself..."
+                      placeholder="Write a professional bio..."
                     />
                   ) : (
-                    <p style={styles.bioText}>{userData.bio || 'No bio added yet.'}</p>
+                    <div style={styles.bioContainer}>
+                      {userData.bio ? (
+                        <p style={styles.bioText}>{userData.bio}</p>
+                      ) : (
+                        <div style={styles.emptyBioState}>
+                          <p>Tell recruiters about yourself.</p>
+                          <button onClick={() => setIsEditing(true)} style={styles.linkButton}>Add Bio</button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
+
+                {/* Recent Activity Timeline (Modern Feed) */}
+                <div style={styles.contentCard}>
+                  <div style={styles.cardHeader}>
+                    <h3 style={styles.cardTitle}>Recent Activity</h3>
+                    <button style={styles.iconButton}><MoreHorizontal size={18} /></button>
+                  </div>
+                  <div style={styles.timelineContainer}>
+                    {recentActivity.length > 0 ? (
+                      recentActivity.map((item, index) => (
+                        <TimelineItem 
+                          key={index}
+                          title={item.title}
+                          subtitle={item.subtitle}
+                          date={formatDate(item.date)}
+                          icon={item.icon}
+                          color={item.color}
+                          isLast={index === recentActivity.length - 1}
+                        />
+                      ))
+                    ) : (
+                      <div style={styles.emptyTimeline}>
+                        <Clock size={40} color="#e2e8f0" strokeWidth={1.5} />
+                        <p style={{marginTop: 10, color: '#94a3b8'}}>No recent activity.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
+
+              {/* Right Column: Details & CTA */}
               <div style={styles.overviewRight}>
-                <div style={styles.quickStats}>
-                  <div style={styles.quickStatsGrid}>
-                    <div style={styles.quickStat}>
-                      <h3 style={styles.sectionTitle}>Quick Stats</h3>
-                      <BarChart3 size={24} color="#3b82f6" />
+                
+                {/* Profile Details Card */}
+                <div style={styles.detailsCard}>
+                  <h3 style={styles.cardTitle}>Contact & Info</h3>
+                  <div style={styles.detailsList}>
+                    <div style={styles.detailItem}>
+                      <div style={styles.detailIconBox}><Mail size={16} /></div>
                       <div>
-                        <p style={styles.quickStatValue}>{appliedJobsList.length}</p>
-                        <p style={styles.quickStatLabel}>Applications</p>
+                        <span style={styles.detailLabel}>Email</span>
+                        <p style={styles.detailValue}>{userData.email}</p>
+                      </div>
+                    </div>
+                    
+                    <div style={styles.detailItem}>
+                      <div style={styles.detailIconBox}><MapPin size={16} /></div>
+                      <div>
+                        <span style={styles.detailLabel}>Location</span>
+                        <p style={styles.detailValue}>{userData.location || 'Remote'}</p>
+                      </div>
+                    </div>
+                    <div style={styles.detailItem}>
+                      <div style={styles.detailIconBox}><Calendar size={16} /></div>
+                      <div>
+                        <span style={styles.detailLabel}>Joined</span>
+                        <p style={styles.detailValue}>{formatDate(userData.createdAt || new Date())}</p>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
 
-          {activeTab === 'courses' && (
-            <div>
-              <div style={styles.sectionHeader}>
-                <h2 style={styles.sectionTitle}>My Enrolled Courses</h2>
-                <p style={styles.sectionSubtitle}>Continue your learning journey</p>
-              </div>
-              {enrolledCourses.length > 0 ? (
-                <div style={styles.coursesGrid}>
-                  {enrolledCourses.map((course: any, i: number) => (
-                    <div key={i} style={styles.courseCard}>
-                      <div style={styles.courseImageWrapper}>
-                        <img
-                          src={course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&h=200&fit=crop&crop=center'}
-                          alt={course.title}
-                          style={styles.courseImage}
-                        />
-                        {course.certificate && (
-                          <div style={styles.certificateBadge}>
-                            <Award size={12} /> Certificate
-                          </div>
-                        )}
-                      </div>
-                      <div style={styles.courseContent}>
-                        <h3 style={styles.courseTitle}>{course.title}</h3>
-                        <div style={styles.courseMeta}>
-                          <div style={styles.courseMetaItem}>
-                            <Clock size={12} />
-                            <span>{course.duration || 'N/A'}</span>
-                          </div>
-                          <div style={styles.courseMetaItem}>
-                            <User size={12} />
-                            <span style={{ fontSize: '12px' }}>{course.instructor || 'Unknown'}</span>
-                          </div>
-                          <div style={styles.courseMetaItem}>
-                            <span style={{
-                              ...styles.levelBadge,
-                              background: course.level === 'Beginner' ? '#28a745' :
-                                         course.level === 'Intermediate' ? '#ffc107' :
-                                         course.level === 'Advanced' ? '#dc3545' : '#6c757d',
-                              fontSize: '10px',
-                              padding: '3px 8px'
-                            }}>
-                              {course.level || 'Beginner'}
-                            </span>
-                          </div>
+                {/* "What's Next" CTA Card */}
+                <div style={styles.ctaCard}>
+                  <div style={styles.ctaContent}>
+                    <div style={styles.ctaHeader}>
+                        <div style={styles.ctaIconBadge}>
+                            <FileText size={20} color="white" />
                         </div>
-                        <div style={styles.courseFooter}>
-                          <span style={styles.coursePrice}>{course.price || 'Free'}</span>
-                          <Link
-                            to={`/courses`}
-                            style={styles.viewCourseBtn}
-                          >
-                            View
-                          </Link>
-                        </div>
-                        {course.progress !== undefined && course.progress > 0 && (
-                          <div style={styles.progressBar}>
-                            <div style={styles.progressLabel}>
-                              <span style={{ fontSize: '11px' }}>Progress: {course.progress || 0}%</span>
-                            </div>
-                            <div style={styles.progressBarBg}>
-                              <div
-                                style={{
-                                  ...styles.progressBarFill,
-                                  width: `${course.progress || 0}%`
-                                }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                        <h3 style={{fontSize: 16, fontWeight: 700, margin: 0, color: 'white'}}>Upload CV</h3>
                     </div>
-                  ))}
+                    <p style={{color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 1.5, margin: '10px 0'}}>
+                        Boost your visibility by 50% with an updated resume.
+                    </p>
+                    <div>
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        style={{ display: 'none' }} 
+        onChange={handleFileChange}
+        accept=".pdf,.doc,.docx"
+      />
+
+      {!file ? (
+        // Initial Upload Button
+        <button style={styles.ctaButton} onClick={handleUploadClick}>
+          Upload Now <ChevronRight size={14} />
+        </button>
+      ) : (
+        // Changed Download Button
+        <button style={styles.downloadButton} onClick={handleDownload}>
+          Download Your CV <Download size={14} />
+        </button>
+      )}
+    </div>
+                  </div>
+                  {/* Decorative element */}
+                  <div style={styles.ctaDecoration}></div>
                 </div>
-              ) : (
-                <div style={styles.emptyState}>
-                  <BookOpen size={48} color="#d1d5db" />
-                  <h3 style={styles.emptyTitle}>No enrolled courses yet</h3>
-                  <p style={styles.emptyDescription}>
-                    Start learning by enrolling in courses from the Courses page
-                  </p>
-                  <Link to="/courses" style={styles.browseCoursesBtn}>
-                    Browse Courses
-                  </Link>
-                </div>
-              )}
+
+              </div>
             </div>
           )}
+          {/* --- END OVERVIEW --- */}
 
+      {activeTab === 'courses' && (
+  <div>
+    <div style={styles.sectionHeader}>
+      <h2 style={styles.sectionTitle}>
+        {userData?.role === 'Coordinator' ? 'My Created Courses' : 'My Enrolled Courses'}
+      </h2>
+      <p style={styles.sectionSubtitle}>
+        {userData?.role === 'Coordinator' ? 'Manage your teaching content' : 'Continue your learning journey'}
+      </p>
+    </div>
+
+    {/* Logic Helper Variables */}
+    {(() => {
+      const isCoordinator = userData?.role === 'Coordinator';
+      const rawData = isCoordinator ? userData?.coursesCreated : enrolledCourses;
+      const displayCourses = Array.isArray(rawData) ? rawData : [];
+
+      if (displayCourses.length === 0) {
+        return (
+          <div style={styles.emptyState}>
+            <BookOpen size={48} color="#d1d5db" />
+            <h3 style={styles.emptyTitle}>
+              {isCoordinator ? "You haven't created any courses" : "No enrolled courses yet"}
+            </h3>
+            <Link to={isCoordinator ? "/add-course" : "/courses"} style={styles.browseCoursesBtn}>
+              {isCoordinator ? "Create a Course" : "Browse Courses"}
+            </Link>
+          </div>
+        );
+      }
+
+      return (
+        <div style={styles.coursesGrid}>
+          {displayCourses.map((course: any, i: number) => {
+            // Safety: define the link path once
+            const courseId = course.id || course._id || i;
+            const courseLink = isCoordinator 
+              ? `/manage-course/${courseId}` 
+              : `/courses/${courseId}`;
+
+            return (
+              <div key={courseId} style={styles.courseCard}>
+                <div style={styles.courseImageWrapper}>
+                  <img
+                    src={course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&h=200&fit=crop&crop=center'}
+                    alt={course.title}
+                    style={styles.courseImage}
+                  />
+                </div>
+                
+                <div style={styles.courseContent}>
+                  <h3 style={styles.courseTitle}>{course.title}</h3>
+                  
+                  <div style={styles.courseMeta}>
+                    <div style={styles.courseMetaItem}>
+                      <Clock size={12} />
+                      <span>{course.duration || 'N/A'}</span>
+                    </div>
+                    
+                    <div style={styles.courseMetaItem}>
+                      <User size={12} />
+                      <span style={{ fontSize: '12px' }}>
+                        {isCoordinator 
+                          ? `${course.enrolledCount || 0} Students` 
+                          : (course.instructor || 'Instructor')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={styles.courseFooter}>
+                    <span style={styles.coursePrice}>
+                      {(!course.price || course.price === 0 || course.price === 'Free') 
+                        ? 'Free' 
+                        : `$${course.price}`}
+                    </span>
+                    
+                    <Link to={courseLink} style={styles.viewCourseBtn}>
+                      {isCoordinator ? 'Edit/Manage' : 'View Course'}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    })()}
+  </div>
+)}
           {activeTab === 'jobs' && (
             <div>
               <div style={styles.sectionHeader}>
@@ -744,78 +987,102 @@ function ProfilePage() {
           {activeTab === 'skills' && (
             <div>
               <div style={styles.sectionHeader}>
-                <h2 style={styles.sectionTitle}>Skills & Expertise</h2>
-                <p style={styles.sectionSubtitle}>Showcase your technical abilities</p>
-                <button
-                  onClick={() => setShowAddSkillModal(true)}
-                  style={styles.addBtn}
-                >
-                  <Plus size={16} /> Add Skill
-                </button>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+                  <div>
+                    <h2 style={styles.sectionTitle}>Skills & Expertise</h2>
+                    <p style={styles.sectionSubtitle}>Technologies and tools you are proficient in</p>
+                  </div>
+                  <button
+                    onClick={() => setShowAddSkillModal(true)}
+                    style={styles.modernAddBtn}
+                  >
+                    <Plus size={18} /> 
+                    <span>Add Skill</span>
+                  </button>
+                </div>
               </div>
-              <div style={styles.skillsGrid}>
-                <div style={styles.skillsContainer}>
-                  {userData.skills?.map((skill, i) => (
+
+              {userData.skills && userData.skills.length > 0 ? (
+                <div style={styles.modernSkillsGrid}>
+                  {userData.skills.map((skill, i) => (
                     <SkillTag
                       key={i}
                       skill={skill}
-                      level={['Beginner', 'Intermediate', 'Advanced', 'Expert'][Math.floor(Math.random() * 4)]}
                       onRemove={() => handleRemoveSkill(skill)}
                       isEditing={isEditing}
                     />
                   ))}
                 </div>
-              </div>
+              ) : (
+                <div style={styles.emptyState}>
+                  <Zap size={48} color="#cbd5e1" />
+                  <h3 style={styles.emptyTitle}>No skills added yet</h3>
+                  <p style={{color: '#94a3b8', marginBottom: 20}}>Add skills to highlight your strengths to recruiters.</p>
+                  <button onClick={() => setShowAddSkillModal(true)} style={styles.secondaryBtn}>
+                    Add Your First Skill
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
+      {/* MODALS */}
       
+      {/* Upload Modal */}
       <Modal
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         title="Update Profile Picture"
       >
-        <div style={styles.uploadArea}>
+        <label 
+          style={{
+            ...styles.uploadArea,
+            opacity: isUploading ? 0.5 : 1,
+            cursor: isUploading ? 'wait' : 'pointer'
+          }}
+        >
           <div style={styles.uploadIcon}>
             <Upload size={48} color="#3b82f6" />
           </div>
-          <p style={styles.uploadText}>Choose a new profile picture</p>
+          
+          <p style={styles.uploadText}>
+            {isUploading 
+              ? "Processing image..." 
+              : "Click here to choose a new profile picture"
+            }
+          </p>
+          
           <input
-          title='inpt'
             type="file"
             accept="image/*"
+            disabled={isUploading}
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleImageUpload(file);
+              if (e.target.files && e.target.files[0]) {
+                handleImageUpload(e.target.files[0]);
+              }
             }}
-            style={styles.fileInput}
+            style={{ display: 'none' }} 
           />
-        </div>
+        </label>
       </Modal>
 
+      {/* Share Modal */}
       <Modal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
         title="Share Profile"
       >
-        <div style={styles.shareContent}>
-          <p style={styles.shareText}>Share your profile with others</p>
-          <div style={styles.shareUrl}>
-            <input
-              type="text"
-              value={window.location.href}
-              readOnly
-              style={styles.shareInput}
-            />
-            <button onClick={handleShare} style={styles.copyBtn}>
-              <Copy size={16} /> Copy
-            </button>
-          </div>
-        </div>
+         <div style={styles.shareContent}>
+           <p style={styles.shareText}>Copy the link below to share your profile</p>
+           <button onClick={handleShare} style={styles.copyBtn}>
+             Copy Link
+           </button>
+         </div>
       </Modal>
 
+      {/* Add Skill Modal */}
       <Modal
         isOpen={showAddSkillModal}
         onClose={() => setShowAddSkillModal(false)}
@@ -832,19 +1099,6 @@ function ProfilePage() {
               style={styles.formInput}
             />
           </div>
-          <div style={styles.formGroup}>
-            <label style={styles.formLabel}>Proficiency Level</label>
-            <select 
-              value={skillLevel} 
-              onChange={(e) => setSkillLevel(e.target.value)}
-              style={styles.formSelect}
-            >
-              <option value="Beginner">Beginner</option>
-              <option value="Intermediate">Intermediate</option>
-              <option value="Advanced">Advanced</option>
-              <option value="Expert">Expert</option>
-            </select>
-          </div>
           <div style={styles.modalActions}>
             <button onClick={() => setShowAddSkillModal(false)} style={styles.cancelBtn}>
               Cancel
@@ -855,19 +1109,21 @@ function ProfilePage() {
           </div>
         </div>
       </Modal>
+
     </div>
   );
 }
 
 export default ProfilePage;
 
-// Styles
+// --- MODERN STYLES OBJECT ---
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
     fontFamily: "'Inter', sans-serif",
-    background: 'white',
+    background: '#f8fafc', // Very light slate background
     minHeight: '100vh',
-    position: 'relative'
+    position: 'relative',
+    padding:'20px',
   },
   loadingContainer: {
     display: 'flex',
@@ -875,7 +1131,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: 'center',
     justifyContent: 'center',
     height: '100vh',
-    background: 'linear-gradient(135deg, #fbfbfbff, #ffffffff)'
+    background: '#f8fafc'
   },
   spinnerWrapper: {
     position: 'relative',
@@ -885,8 +1141,8 @@ const styles: { [key: string]: React.CSSProperties } = {
   spinner: {
     width: 60,
     height: 60,
-    border: '4px solid #e5e7eb',
-    borderTop: '4px solid #3a25ff',
+    border: '4px solid #e2e8f0',
+    borderTop: '4px solid #3b82f6',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
     position: 'absolute'
@@ -895,7 +1151,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: 40,
     height: 40,
     border: '3px solid transparent',
-    borderTop: '3px solid #3a25ff',
+    borderTop: '3px solid #3b82f6',
     borderRadius: '50%',
     animation: 'spin 1.5s linear infinite reverse',
     position: 'absolute',
@@ -903,10 +1159,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     left: 10
   },
   loadingText: {
-    marginTop: 80,
-    color: '#4b5563',
-    fontWeight: 600,
-    fontSize: 18
+    marginTop: 20,
+    color: '#64748b',
+    fontWeight: 500
   },
   center: {
     textAlign: 'center',
@@ -914,6 +1169,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#6b7280',
     fontSize: 18,
     fontWeight: 500
+  },
+  primaryBtnLink: {
+    display: 'inline-block', marginTop: '20px', padding: '12px 24px', 
+    background: '#3a25ff', color: 'white', borderRadius: '8px', 
+    textDecoration: 'none', fontWeight: 600
   },
   alert: {
     position: 'fixed',
@@ -927,546 +1187,672 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.25)',
+    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
   },
+  
+  // --- HERO SECTION ---
   hero: {
-    background: 'linear-gradient(135deg, #f3f4f9ff 0%, #ffffffff 30%, #ffffffff 70%, #ffffffff 100%)',
-    color: 'black',
-    top:'100px',
-    padding: '80px 20px',
+    background: 'linear-gradient(180deg, #fff 0%, #f1f5f9 100%)',
+    padding: '200px 40px 60px',
     borderRadius: '0 0 40px 40px',
     position: 'relative',
-    overflow: 'hidden'
+    borderBottom: '1px solid #e2e8f0'
   },
   heroContent: {
-  maxWidth: 1400,
-  margin: '0 auto',
-  position: 'relative',
-  zIndex: 2,
-},
-profileHeader: {
-  display: 'flex',
-  gap: 30,
-  alignItems: 'center',
-  flexWrap: 'wrap',
-},
-profileImageWrapper: {
-  position: 'relative',
-  flexShrink: 0,
-},
-profileImage: {
-  width: 150,
-  height: 150,
-  borderRadius: "50%",
-  objectFit: "cover",
-  border: "5px solid #fff",
-  boxShadow: "0 4px 16px rgba(0,0,0,0.15), 0 0 0 6px rgba(255,255,255,0.5)",
-  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-},
-profileImageHover: {
-  transform: "scale(1.03)",
-  boxShadow: "0 6px 20px rgba(0,0,0,0.25), 0 0 0 8px rgba(59,130,246,0.25)",
-},
-cameraBtn: {
-  position: "absolute",
-  bottom: 8,
-  right: 8,
-  background: "linear-gradient(135deg, #3a25ff, #3a25ff)",
-  color: "white",
-  width: 40,
-  height: 40,
-  borderRadius: "50%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "3px solid white",
-  cursor: "pointer",
-  transition: "all 0.25s ease",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
-},
-cameraBtnHover: {
-  transform: "scale(1.1)",
-  boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
-},
-profileInfo: {
-  flex: 1,
-  minWidth: 300,
-  padding: "0.5rem",
-},
-nameSection: {
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-start",
-  marginBottom: 6,
-},
-name: {
-    fontFamily: 'Poppins, sans-serif',
-    fontSize: "2.7rem",
-    fontWeight: 700,
-    color: "#2d2e32",
-    letterSpacing: "0.5px",
-    lineHeight: 1.3,
-    margin: 0,
+    maxWidth: 1200,
+    margin: '0 auto',
+    position: 'relative',
+    zIndex: 2,
   },
-  subtitle: {
-    fontFamily: 'Poppins, sans-serif',
-    fontSize: "1rem",
-    fontWeight: 500,
-    color: "#6b7280",
-    marginTop: 4,
+  profileHeader: {
+    display: 'flex',
+    gap: 32,
+    alignItems: 'center',
+    flexWrap: 'wrap',
   },
-
-status: {
-  fontSize: 14,
-  fontWeight: 500,
-  color: "#22c55e", // green like "Premium User"
-  marginTop: 2,
-},
-  statsRow: {
-    display: "flex",
-    gap: 20,
-    marginTop: 12,
-    fontSize: 14,
-    color: "#374151",
+  profileImageWrapper: {
+    position: 'relative',
+    flexShrink: 0,
   },
-  statItem: {
+  profileImage: {
+    width: 140,
+    height: 140,
+    borderRadius: "50%",
+    objectFit: "cover",
+    border: "4px solid #fff",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+  },
+  cameraBtn: {
+    position: "absolute",
+    bottom: 5,
+    right: 5,
+    background: "#3a25ff",
+    color: "white",
+    width: 36,
+    height: 36,
+    borderRadius: "50%",
     display: "flex",
     alignItems: "center",
-    gap: 6,
-    background: "rgba(255,255,255,0.6)",
-    padding: "6px 12px",
-    borderRadius: "12px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-    backdropFilter: "blur(6px)",
-    transition: "transform 0.2s ease",
+    justifyContent: "center",
+    border: "2px solid white",
+    cursor: "pointer",
+    transition: "transform 0.2s",
   },
-  statItemHover: {
-    transform: "translateY(-2px)",
+  profileInfo: {
+    flex: 1,
+    minWidth: 300,
+  },
+  nameSection: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 8
+  },
+  name: {
+    fontFamily: "'Inter', sans-serif",
+    fontSize: "2.5rem",
+    fontWeight: 800,
+    color: "#0f172a",
+    letterSpacing: "-0.03em",
+    lineHeight: 1.1,
+    margin: 0,
+  },
+  roleTag: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 6,
+      background: 'rgba(231, 224, 254, 0.58)',
+      color: '#3a25ff',
+      padding: '4px 10px',
+      borderRadius: 20,
+      fontSize: 12,
+      fontWeight: 600
   },
   title: {
-    fontSize: 20,
-    opacity: 0.95,
-    margin: '8px 0',
-    fontWeight: 600
+    fontSize: 18,
+    color: '#64748b',
+    margin: '0 0 12px 0',
+    fontWeight: 500
   },
-  stats: {
-    display: 'flex',
-    gap: 24,
-    marginBottom: 20,
-    fontSize: 14,
-    flexWrap: 'wrap'
-  },
+  
+  // --- STRENGTH BAR ---
   strengthContainer: {
-    background: 'rgba(228, 228, 228, 0.15)',
-    padding: 16,
-    borderRadius: 12,
-    backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255,255,255,0.1)',
+    width: '100%',
+    maxWidth: 300,
+    marginTop: 8
   },
   strengthHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8
+    marginBottom: 6
   },
   strengthLabel: {
-    fontSize: 14,
-    opacity: 0.9
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: 600
   },
   strengthValue: {
-    fontSize: 18,
-    fontWeight: 700
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#0f172a'
   },
   strengthBar: {
-    height: 8,
-    background: 'rgba(181, 176, 176, 0.2)',
-    borderRadius: 4,
+    height: 6,
+    background: '#e2e8f0',
+    borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 8,
-    boxShadow: "0 0px 2px rgba(0,0,0,0.08)",
   },
   strengthFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 3,
     transition: 'width 0.5s ease'
   },
-  strengthTip: {
-    fontSize: 12,
-    opacity: 0.8,
-    margin: 0
-  },
+  
+  // --- BUTTONS ---
   actions: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-    alignItems: 'flex-end'
+    gap: 12,
   },
   primaryActions: {
     display: 'flex',
     gap: 12
   },
   editBtn: {
-  padding: '15px 24px',
-  background: '#3a25ff',        // filled color
-  color: 'white',               // text color
-  border: '2px solid #f5f6f9ff', // border matches background
-  borderRadius: 15,
-  fontWeight: 700,
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  fontSize: 14,
-  transition: 'all 0.3s ease',
-  boxShadow: '0 6px 18px rgba(0,0,0,0.15)',
-
-},
-shareBtn: {
-  padding: '12px 24px',
-  background: 'white',
-  color: '#3a25ff',
-  border: '2px solid #3a25ff',
-  borderRadius: 15,
-  fontWeight: 700,
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  fontSize: 14,
-  backdropFilter: 'blur(10px)',
-  transition: 'all 0.3s ease',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-
-},
-  saveBtn: {
-    padding: '12px 24px',
-    background: 'black',
+    padding: '10px 20px',
+    background: '#3a25ff',
     color: 'white',
     border: 'none',
-    borderRadius: 15,
-    fontWeight: 700,
+    borderRadius: 8,
+    fontWeight: 600,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     gap: 8,
     fontSize: 14,
-    transition: 'all 0.2s ease',
-    boxShadow: '0 4px 12px rgba(184, 185, 184, 0.3)'
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.15)',
+  },
+  shareBtn: {
+    padding: '10px 20px',
+    background: 'white',
+    color: '#0f172a',
+    border: '1px solid #cbd5e1',
+    borderRadius: 8,
+    fontWeight: 600,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: 14,
+    transition: 'all 0.2s',
+  },
+  saveBtn: {
+    padding: '10px 20px',
+    background: '#059669',
+    color: 'white',
+    border: 'none',
+    borderRadius: 8,
+    fontWeight: 600,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: 14,
   },
   cancelBtn: {
-     padding: '15px 24px',
-  background: 'white',
-  color: '#0c0c0cff',
-  border: '2px solid #010101ff',
-  borderRadius: 15,
-  fontWeight: 700,
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  fontSize: 14,
-  backdropFilter: 'blur(10px)',
-  transition: 'all 0.3s ease',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+    padding: '10px 20px',
+    background: 'white',
+    color: '#ef4444',
+    border: '1px solid #fee2e2',
+    borderRadius: 8,
+    fontWeight: 600,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: 14,
   },
+
   main: {
     maxWidth: 1200,
     margin: '0 auto',
-    padding: '100px 20px'
+    padding: '40px 20px'
   },
+
+  // --- MODERN STAT CARD STYLES ---
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
     gap: 24,
-    marginBottom: 60
+    marginBottom: 40
   },
-  statCard: {
+  modernStatCard: {
     background: 'white',
-    borderRadius: 20,
-    padding: 28,
+    borderRadius: 16,
+    padding: 24,
+    boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+    border: '1px solid #f1f5f9',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  },
+  statTopRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start'
+  },
+  statIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    border: '1px solid #f1f5f9'
+    justifyContent: 'center',
+  },
+  trendPill: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    padding: '4px 8px',
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 700
   },
   statContent: {
-    flex: 1
-  },
-  statHeader: {
-    marginBottom: 12
+    display: 'flex',
+    flexDirection: 'column',
   },
   statTitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    margin: 0,
-    fontWeight: 600
+    fontWeight: 500,
+    margin: 0
   },
   statValue: {
     fontSize: 32,
     fontWeight: 800,
     color: '#0f172a',
-    margin: '0 0 8px 0',
-    lineHeight: 1
+    margin: '4px 0 0',
+    letterSpacing: '-0.02em'
   },
-  change: {
+  statSubLabel: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 4
+  },
+
+  // --- TABS ---
+  tabsContainer: {
+    width: "100%",
+    marginBottom: 24,
+    borderBottom: '1px solid #e2e8f0',
+    paddingBottom: 0
+  },
+  tabs: {
+    display: "flex",
+    gap: 32,
+  },
+  tab: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "12px 0",
+    fontWeight: 600,
+    fontSize: 14,
+    border: "none",
+    borderBottom: "2px solid transparent",
+    cursor: "pointer",
+    background: "transparent",
+    color: "#64748b",
+    transition: "all 0.2s ease",
+  },
+  activeTab: {
+    color: "#0f172a",
+    borderBottom: "2px solid #0f172a",
+  },
+  inactiveTab: {
+    color: "#64748b",
+  },
+  tabContent: {
+    marginTop: 20,
+  },
+  
+  // --- OVERVIEW LAYOUT ---
+  overviewGrid: {
+    display: "grid",
+    gridTemplateColumns: "2fr 1fr", 
+    gap: 24,
+    alignItems: 'start',
+  },
+  overviewLeft: {
     display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    fontSize: 13
+    flexDirection: 'column',
+    gap: 24
   },
-  changeText: {
-    color: '#10b981',
-    fontWeight: 600
+  overviewRight: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 24
   },
-  iconBox: {
-    width: 64,
-    height: 64,
+  contentCard: {
+    backgroundColor: 'white',
     borderRadius: 16,
+    padding: 24,
+    boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+    border: '1px solid #f1f5f9'
+  },
+  cardHeader: {
     display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: '#0f172a',
+    margin: 0
+  },
+  badge: {
+    fontSize: 11,
+    fontWeight: 700,
+    backgroundColor: '#fff7ed',
+    color: '#0c38eaff',
+    padding: '2px 8px',
+    borderRadius: 4,
+    textTransform: 'uppercase'
+  },
+  iconButton: {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#94a3b8'
+  },
+  bioContainer: {
+    minHeight: 60
+  },
+  bioText: {
+    fontSize: 15,
+    lineHeight: 1.6,
+    color: '#334155',
+    margin: 0
+  },
+  emptyBioState: {
+    display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#3b82f6',
+    padding: '20px 0',
+    color: '#94a3b8',
+    gap: 8
   },
-    tabsContainer: {
-      width: "100%",
-      background: "#f6f6f6bf", 
-      padding: 20,
-      display: "flex",
-      justifyContent: "center",
-      borderRadius:15,
-    },
-    tabs: {
-      display: "flex",
-      gap: 12,
-      backgroundColor: "#ffffff8f",
-      padding: 6,
-      borderRadius: 16,
-      position: "relative",
-      width: "fit-content",
-      boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-    },
-    tab: {
-      display: "flex",
-      alignItems: "center",
-      gap: 6,
-      padding: "8px 16px",
-      borderRadius: 12,
-      fontWeight: 500,
-      fontSize: 14,
-      border: "none",
-      cursor: "pointer",
-      background: "transparent",
-      color: "black",
-      position: "relative",
-      zIndex: 1,
-      transition: "color 0.2s ease",
-    },
-    activeTab: {
-      color: "#3a25ff",
-    },
-    underline: {
-      position: "absolute",
-      height: 4,
-      borderRadius: 2,
-      backgroundColor: "#4f46e5",
-      bottom: 0,
-      transition: "all 0.3s ease",
-    },
-    tabContent: {
-      marginTop: 20,
-    },
-    overviewGrid: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 40,
-    },
-  overviewLeft: {
-    flex: 1
-  },
-  contactSection: {
-    margin: '9px 0 0 0',
-    padding: 20,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 16,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-  },
-  contactGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: 30,
-  },
-  contactItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 22,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    transition: 'all 0.2s ease',
-    cursor: 'default',
-  },
-  contactItemHover: {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 6px 12px rgba(0,0,0,0.1)',
-  },
-  contactLabel: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: 500,
-    minWidth: 80,
-  },
-  contactValue: {
-    fontSize: 16,
-    color: '#0f172a',
+  linkButton: {
+    background: 'none',
+    border: 'none',
+    color: '#3b82f6',
     fontWeight: 600,
-  },
-  bioSection: {
-    marginBottom: 32,
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 16,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+    cursor: 'pointer',
+    padding: 0,
+    fontSize: 14,
+    textDecoration: 'underline'
   },
   textarea: {
     width: '100%',
     padding: 16,
-    border: '1px solid #e5e7eb',
-    borderRadius: 12,
-    fontSize: 16,
+    border: '1px solid #cbd5e1',
+    borderRadius: 8,
+    fontSize: 14,
     resize: 'vertical',
     minHeight: 100,
-    transition: 'border-color 0.2s ease',
-  },
-  textareaFocus: {
-    borderColor: '#4f46e5',
-    outline: 'none',
-  },
-  bioText: {
-    fontSize: 16,
-    lineHeight: 1.6,
-    color: '#1e293b',
-  },
-  overviewRight: {
-    flex: 1,
-    padding: 20,
-    display: "flex",
-    flexDirection: "column",
-    gap: 20,
-  },
-  quickStats: {
-    marginBottom: 42,
-  },
-  quickStatsGrid: {
-    display: "inline",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: 16,
-  },
-  quickStat: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "left",
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: "#f8f9fa",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-    transition: "all 0.2s ease",
-    cursor: "default",
-    gap: 12,
-  },
-  sectionTitle: {
-    fontSize: 23,
-    fontWeight: 700,
-    color: "#000000",
-    borderRadius: 12,
-    padding: "4px 12px",
-    marginBottom: 12,
-    textAlign: "left",
-  },
-  quickStatIcon: {
-    width: 40,
-    height: 40,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#dbeafe",
-    borderRadius: "50%",
-  },
-  quickStatValue: {
-    fontSize: 20,
-    fontWeight: 700,
-    color: "#0f172a",
-    margin: 0,
-  },
-  quickStatLabel: {
-    fontSize: 14,
-    color: "#64748b",
-    margin: 0,
+    fontFamily: 'inherit'
   },
 
-  recentActivity: {
-    marginBottom: 32
-  },
-  activityList: {
+  // --- MODERN TIMELINE ---
+  timelineContainer: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 16
   },
-  activityItem: {
+  timelineItem: {
+    display: 'flex',
+    gap: 16,
+    position: 'relative',
+    paddingBottom: 0
+  },
+  timelineLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: 32
+  },
+  timelineIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    zIndex: 2,
+    flexShrink: 0,
+    boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+  },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    background: '#f1f5f9',
+    marginTop: 4,
+    marginBottom: 4,
+    minHeight: 20
+  },
+  timelineContent: {
+    flex: 1,
+    paddingTop: 4,
+    paddingBottom: 24
+  },
+  timelineHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 4
+  },
+  timelineTitle: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#1e293b',
+    margin: 0
+  },
+  timelineDate: {
+    fontSize: 12,
+    color: '#94a3b8',
+    whiteSpace: 'nowrap'
+  },
+  timelineSubtitle: {
+    fontSize: 13,
+    color: '#64748b',
+    margin: 0
+  },
+  emptyTimeline: {
+    textAlign: 'center',
+    padding: '30px 0',
+    color: '#94a3b8',
+    fontSize: 14,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
+
+  // --- DETAILS CARD ---
+  detailsCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+    border: '1px solid #f1f5f9'
+  },
+  detailsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+    marginTop: 16
+  },
+  detailItem: {
     display: 'flex',
     alignItems: 'center',
     gap: 12
   },
-  activityIcon: {
+  detailIconBox: {
     width: 32,
     height: 32,
-    borderRadius: 50,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#f1f5f9'
+    color: '#64748b',
+    flexShrink: 0
   },
-  activityText: {
-    fontSize: 14,
+  detailLabel: {
+    fontSize: 11,
+    color: '#94a3b8',
     fontWeight: 600,
-    color: '#0f172a'
+    marginBottom: 0,
+    display: 'block',
+    textTransform: 'uppercase'
   },
-  activityTime: {
-    fontSize: 12,
-    color: '#64748b'
-  },
-  sectionHeader: {
-    marginBottom: 32
+  detailValue: {
+    fontSize: 14,
+    color: '#1e293b',
+    fontWeight: 500,
+    margin: 0,
+    wordBreak: 'break-all'
   },
 
+  // --- CTA CARD ---
+  ctaCard: {
+    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+    borderRadius: 16,
+    padding: 24,
+    color: 'white',
+    position: 'relative',
+    overflow: 'hidden',
+    boxShadow: '0 10px 20px rgba(15, 23, 42, 0.2)'
+  },
+  ctaContent: {
+      position: 'relative',
+      zIndex: 2
+  },
+  ctaHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 8
+  },
+  ctaIconBadge: {
+    width: 32,
+    height: 32,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 8,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaButton: {
+    backgroundColor: 'white',
+    color: '#0f172a',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: 6,
+    fontWeight: 700,
+    fontSize: 12,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    transition: 'transform 0.2s'
+  },
+  ctaDecoration: {
+      position: 'absolute',
+      top: -20,
+      right: -20,
+      width: 100,
+      height: 100,
+      background: 'rgba(255,255,255,0.05)',
+      borderRadius: '50%',
+      zIndex: 1
+  },
+
+  // --- GENERAL SECTION STYLES ---
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 700,
+    color: "#0f172a",
+    marginBottom: 4,
+  },
   sectionSubtitle: {
     fontSize: 14,
     color: '#64748b',
-    margin: '11px 0 0 0',
+    margin: 0
   },
-  addBtn: {
-    padding: '15px 24px',
-    background: '#3a25ff',
-        margin: '11px 0 0 0',
-
-    color: 'white',
-    border: 'none',
-    borderRadius: 12,
-    fontWeight: 700,
-    cursor: 'pointer',
+  sectionHeader: {
+    marginBottom: 24
+  },
+  
+  // --- SKILLS GRID ---
+  modernSkillsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+    gap: 16,
+  },
+  skillCard: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    border: '1px solid #e2e8f0',
+    display: 'flex',
+    overflow: 'hidden',
+    position: 'relative',
+    transition: 'all 0.2s',
+  },
+  skillColorStrip: {
+    width: 4,
+    height: '100%',
+    flexShrink: 0
+  },
+  skillInfo: {
+    padding: '10px 12px',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: 2
+  },
+  skillHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%'
+  },
+  skillName: {
+    fontWeight: 600,
+    fontSize: 14,
+    color: '#1e293b',
+  },
+  skillMeta: {
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
-    fontSize: 14,
-    transition: 'all 0.2s ease',
-    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+    gap: 6
   },
+  skillDot: {
+    width: 6,
+    height: 6,
+    borderRadius: '50%'
+  },
+  skillLevelText: {
+    fontSize: 11,
+    fontWeight: 600,
+    opacity: 0.8
+  },
+  deleteSkillBtn: {
+    background: 'none',
+    color: '#94a3b8',
+    border: 'none',
+    width: 20,
+    height: 20,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+  },
+  modernAddBtn: {
+    backgroundColor: '#0f172a',
+    color: 'white',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: 20,
+    fontWeight: 600,
+    fontSize: 13,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    cursor: 'pointer',
+    boxShadow: '0 4px 10px rgba(15, 23, 42, 0.15)',
+  },
+  secondaryBtn: {
+    backgroundColor: 'white',
+    color: '#334155',
+    border: '1px solid #cbd5e1',
+    padding: '10px 20px',
+    borderRadius: 8,
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  
+  // --- CARDS (Jobs/Courses) ---
   jobsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
     gap: 20
   },
   jobCard: {
@@ -1474,18 +1860,19 @@ shareBtn: {
     borderRadius: 12,
     padding: 20,
     border: '1px solid #f1f5f9',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+    boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+    transition: 'transform 0.2s',
   },
   jobHeader: {
     display: 'flex',
     justifyContent: 'space-between',
-    marginBottom: 12
+    marginBottom: 16
   },
   jobInfo: {
     flex: 1
   },
   jobTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 700,
     margin: 0,
     color: '#0f172a'
@@ -1497,48 +1884,50 @@ shareBtn: {
   },
   jobLocation: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#94a3b8',
     display: 'flex',
     alignItems: 'center',
-    gap: 4
+    gap: 4,
+    marginTop: 8
   },
   jobMeta: {
     display: 'flex',
-    gap: 12,
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 8,
     fontSize: 12,
-    color: '#64748b'
   },
   jobSalary: {
-    background: '#dbeafe',
+    background: '#f1f5f9',
+    color: '#475569',
     padding: '4px 8px',
     borderRadius: 4,
     fontSize: 12,
     fontWeight: 600
   },
   jobType: {
-    background: '#f1f5f9',
-    padding: '4px 8px',
+    border: '1px solid #e2e8f0',
+    color: '#64748b',
+    padding: '3px 8px',
     borderRadius: 4,
-    fontSize: 12,
-    fontWeight: 600
+    fontSize: 11,
   },
   jobFooter: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     fontSize: 12,
-    color: '#64748b'
+    color: '#64748b',
+    borderTop: '1px solid #f8fafc',
+    paddingTop: 16
   },
   jobStatus: {
-    background: '#dcfce7',
-    color: '#166534',
-    padding: '4px 8px',
-    borderRadius: 4,
+    background: '#ecfdf5',
+    color: '#059669',
+    padding: '4px 10px',
+    borderRadius: 20,
     fontSize: 12,
     fontWeight: 600
-  },
-  jobDate: {
-    fontWeight: 500
   },
   emptyState: {
     display: 'flex',
@@ -1547,63 +1936,27 @@ shareBtn: {
     justifyContent: 'center',
     padding: 60,
     textAlign: 'center',
-    color: '#6b7280'
+    color: '#94a3b8',
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    border: '2px dashed #e2e8f0'
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 600,
-    margin: '0 0 12px 0'
+    color: '#64748b',
+    margin: '16px 0 8px 0'
   },
-  emptyDescription: {
-    fontSize: 14
-  },
-  skillsGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: 32
-  },
-  skillsContainer: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 12
-  },
-  skillTagWrapper: {
-    display: 'inline-block'
-  },
-  skillTag: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '8px 16px',
-    borderRadius: 20,
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 600,
-    transition: 'transform 0.2s ease'
-  },
-  skillLevel: {
-    fontSize: 10,
-    fontWeight: 400,
-    background: 'rgba(255,255,255,0.2)',
-    padding: '2px 6px',
-    borderRadius: 4,
-    marginLeft: 8
-  },
-  removeBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: 'white',
-    cursor: 'pointer',
-    padding: 4,
-    transition: 'transform 0.2s ease'
-  },
+  
+  // --- MODALS ---
   modalOverlay: {
     position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'rgba(0,0,0,0.5)',
+    background: 'rgba(15, 23, 42, 0.6)',
+    backdropFilter: 'blur(4px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1611,156 +1964,119 @@ shareBtn: {
   },
   modal: {
     background: 'white',
-    borderRadius: 16,
-    padding: 20,
-    boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+    borderRadius: 20,
+    padding: 24,
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
   },
   modalHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20
+    marginBottom: 24
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 700,
-    margin: 0
+    margin: 0,
+    color: '#0f172a'
   },
   closeBtn: {
     background: 'transparent',
     border: 'none',
-    color: '#6b7280',
+    color: '#94a3b8',
     cursor: 'pointer',
     fontSize: 24
   },
   modalBody: {
-    padding: 20
+    padding: '0 4px' // slight padding for scrollbar
   },
   uploadArea: {
-    textAlign: 'center',
-    padding: 40
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: 40,
+    border: '2px dashed #cbd5e1',
+    borderRadius: 12,
+    backgroundColor: '#f8fafc',
+    transition: 'all 0.2s ease',
   },
   uploadIcon: {
-    marginBottom: 20
+    marginBottom: 16,
   },
   uploadText: {
     fontSize: 16,
     color: '#64748b',
-    marginBottom: 20
-  },
-  fileInput: {
-    display: 'block',
-    margin: '0 auto',
-    padding: 12,
-    background: '#f1f5f9',
-    border: '2px dashed #3b82f6',
-    borderRadius: 12,
-    cursor: 'pointer',
-    width: '100%'
+    textAlign: 'center' as const,
   },
   shareContent: {
-    textAlign: 'center'
+    textAlign: 'center',
+    padding: '20px 0'
   },
   shareText: {
     fontSize: 16,
     color: '#64748b',
-    marginBottom: 20
-  },
-  shareUrl: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    marginBottom: 20
-  },
-  shareInput: {
-    flex: 1,
-    padding: 12,
-    border: '1px solid #e5e7eb',
-    borderRadius: 12,
-    fontSize: 14
+    marginBottom: 24
   },
   copyBtn: {
-    padding: '12px 24px',
-    background: '#3a25ff',
+    padding: '12px 32px',
+    background: '#0f172a',
     color: 'white',
     border: 'none',
-    borderRadius: 12,
+    borderRadius: 8,
     fontWeight: 600,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    gap: 8
-  },
-  socialShare: {
-    textAlign: 'center'
-  },
-  socialButtons: {
-    display: 'flex',
-    gap: 12,
-    justifyContent: 'center',
-    marginTop: 16
-  },
-  socialBtn: {
-    padding: '8px 16px',
-    background: '#f1f5f9',
-    border: '1px solid #e5e7eb',
-    borderRadius: 12,
-    fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease'
+    gap: 8,
+    margin: '0 auto'
   },
   addSkillForm: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 20
+    gap: 24
   },
   formGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 6
+    gap: 8
   },
   formLabel: {
     fontSize: 14,
     fontWeight: 600,
-    color: '#64748b'
+    color: '#334155'
   },
   formInput: {
-    padding: 12,
-    border: '1px solid #e5e7eb',
-    borderRadius: 12,
-    fontSize: 14
-  },
-  formSelect: {
-    padding: 12,
-    border: '1px solid #e5e7eb',
-    borderRadius: 12,
-    fontSize: 14
+    padding: '12px 16px',
+    border: '1px solid #cbd5e1',
+    borderRadius: 8,
+    fontSize: 14,
+    outline: 'none',
+    transition: 'border-color 0.2s'
   },
   modalActions: {
     display: 'flex',
     justifyContent: 'flex-end',
     gap: 12,
-    marginTop: 20
+    marginTop: 8
   },
   coursesGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: 16
+    gap: 20
   },
   courseCard: {
     background: 'white',
     borderRadius: 12,
     overflow: 'hidden',
     border: '1px solid #f1f5f9',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
     transition: 'all 0.3s ease',
     cursor: 'pointer'
   },
   courseImageWrapper: {
     position: 'relative',
     width: '100%',
-    height: 120,
+    height: 140,
     overflow: 'hidden'
   },
   courseImage: {
@@ -1772,108 +2088,74 @@ shareBtn: {
     position: 'absolute',
     top: 8,
     right: 8,
-    background: 'rgba(40, 167, 69, 0.9)',
+    background: 'rgba(16, 185, 129, 0.95)',
     color: 'white',
     padding: '4px 8px',
-    borderRadius: 12,
-    fontSize: 10,
-    fontWeight: 600,
+    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: 700,
     display: 'flex',
     alignItems: 'center',
-    gap: 3
+    gap: 4
   },
   courseContent: {
-    padding: 12
+    padding: 16
   },
   courseTitle: {
     fontSize: 15,
     fontWeight: 700,
     color: '#0f172a',
     margin: '0 0 8px 0',
-    lineHeight: 1.3,
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
+    lineHeight: 1.4,
+    height: 42, 
     overflow: 'hidden'
-  },
-  courseDescription: {
-    display: 'none'
   },
   courseMeta: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 10,
+    gap: 12,
+    marginBottom: 12,
     alignItems: 'center'
   },
   courseMetaItem: {
     display: 'flex',
     alignItems: 'center',
     gap: 4,
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b'
-  },
-  levelBadge: {
-    padding: '3px 8px',
-    borderRadius: 8,
-    fontSize: 10,
-    fontWeight: 600,
-    color: 'white'
   },
   courseFooter: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 12,
+    paddingTop: 12,
     borderTop: '1px solid #f1f5f9'
   },
   coursePrice: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 700,
-    color: '#28a745'
+    color: '#059669'
   },
   viewCourseBtn: {
-    padding: '6px 12px',
-    background: '#3a25ff',
-    color: 'white',
+    padding: '6px 16px',
+    background: '#f1f5f9',
+    color: '#334155',
     borderRadius: 6,
     fontSize: 12,
     fontWeight: 600,
     textDecoration: 'none',
     transition: 'all 0.2s ease'
   },
-  progressBar: {
-    marginTop: 10
-  },
-  progressLabel: {
-    fontSize: 10,
-    color: '#64748b',
-    marginBottom: 4,
-    fontWeight: 600
-  },
-  progressBarBg: {
-    height: 6,
-    background: '#f1f5f9',
-    borderRadius: 3,
-    overflow: 'hidden'
-  },
-  progressBarFill: {
-    height: '100%',
-    background: 'linear-gradient(90deg, #3a25ff, #5a4bff)',
-    borderRadius: 3,
-    transition: 'width 0.3s ease'
-  },
   browseCoursesBtn: {
     display: 'inline-block',
     marginTop: 16,
     padding: '12px 24px',
-    background: '#3a25ff',
+    background: '#0f172a',
     color: 'white',
-    borderRadius: 12,
+    borderRadius: 8,
     fontSize: 14,
     fontWeight: 600,
     textDecoration: 'none',
-    transition: 'all 0.2s ease'
   }
 };

@@ -68,7 +68,6 @@
   left: 100%;
 }
 
-/* Link Card Animations */
 .link-card {
   animation: slideIn 0.4s ease-out;
   transition: all 0.3s ease;
@@ -79,7 +78,6 @@
   box-shadow: 0 12px 24px rgba(0,0,0,0.1);
 }
 
-/* Gradient Backgrounds */
 .gradient-bg {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
